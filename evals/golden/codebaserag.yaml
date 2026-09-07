@@ -1,0 +1,219 @@
+- question: "How are source files discovered during ingestion?"
+  expected_files: ["src/coderag/ingest/readers.py"]
+  answer_contains: ["discover_files", "rglob", "extension filter"]
+  repo: codebaserag
+
+- question: "Which file extensions are indexed by the ingest reader?"
+  expected_files: ["src/coderag/ingest/readers.py"]
+  answer_contains: [".py", ".md", ".toml", ".yaml"]
+  repo: codebaserag
+
+- question: "How does ingestion skip files listed in .gitignore?"
+  expected_files: ["src/coderag/ingest/readers.py"]
+  answer_contains: ["load_gitignore", "pathspec", "gitwildmatch"]
+  repo: codebaserag
+
+- question: "How are .git directories excluded from indexing?"
+  expected_files: ["src/coderag/ingest/readers.py"]
+  answer_contains: [".git", "is_ignored", "relative parts"]
+  repo: codebaserag
+
+- question: "What chunking strategies are supported by the chunker?"
+  expected_files: ["src/coderag/ingest/chunkers.py"]
+  answer_contains: ["fixed", "chunk_text", "strategy"]
+  repo: codebaserag
+
+- question: "How does fixed-size chunking split a file into chunks?"
+  expected_files: ["src/coderag/ingest/chunkers.py"]
+  answer_contains: ["splitlines", "window", "size"]
+  repo: codebaserag
+
+- question: "What metadata does each Chunk carry?"
+  expected_files: ["src/coderag/types.py"]
+  answer_contains: ["path", "line_start", "line_end", "hash", "language"]
+  repo: codebaserag
+
+- question: "How is a chunk's content hash computed?"
+  expected_files: ["src/coderag/ingest/chunkers.py"]
+  answer_contains: ["sha256", "_hash", "utf-8"]
+  repo: codebaserag
+
+- question: "What is the ChunkStatus enum used for?"
+  expected_files: ["src/coderag/types.py"]
+  answer_contains: ["PENDING", "INDEXED", "FAILED"]
+  repo: codebaserag
+
+- question: "Which programming languages are recognized for chunks?"
+  expected_files: ["src/coderag/types.py", "src/coderag/ingest/readers.py"]
+  answer_contains: ["PYTHON", "MARKDOWN", "TOML", "YAML", "UNKNOWN"]
+  repo: codebaserag
+
+- question: "What is the Embedder port?"
+  expected_files: ["src/coderag/stores/ports.py"]
+  answer_contains: ["Protocol", "embed", "dim"]
+  repo: codebaserag
+
+- question: "What methods must a VectorStore implement?"
+  expected_files: ["src/coderag/stores/ports.py"]
+  answer_contains: ["upsert", "query", "count"]
+  repo: codebaserag
+
+- question: "How does the PgvectorStore persist chunks and vectors?"
+  expected_files: ["src/coderag/stores/pgvector.py"]
+  answer_contains: ["CREATE TABLE", "chunks", "executemany", "vector"]
+  repo: codebaserag
+
+- question: "How does PgvectorStore order retrieval results?"
+  expected_files: ["src/coderag/stores/pgvector.py"]
+  answer_contains: ["<=>", "cosine", "ORDER BY", "1 - distance"]
+  repo: codebaserag
+
+- question: "Which embedding model does the default Ollama embedder use?"
+  expected_files: ["src/coderag/llm/ollama_embedder.py"]
+  answer_contains: ["nomic-embed-text", "OllamaEmbedder", "ollama"]
+  repo: codebaserag
+
+- question: "How does the ingest pipeline orchestrate read, chunk, embed and store?"
+  expected_files: ["src/coderag/ingest/pipeline.py"]
+  answer_contains: ["run_ingest", "discover_files", "embedder", "store.upsert"]
+  repo: codebaserag
+
+- question: "What happens when a binary file is read during ingest?"
+  expected_files: ["src/coderag/ingest/pipeline.py"]
+  answer_contains: ["UnicodeDecodeError", "skipping", "warning"]
+  repo: codebaserag
+
+- question: "What exception is raised if embedding fails during ingest?"
+  expected_files: ["src/coderag/ingest/pipeline.py"]
+  answer_contains: ["IngestError", "embedding failed"]
+  repo: codebaserag
+
+- question: "What configuration does Settings provide?"
+  expected_files: ["src/coderag/config.py"]
+  answer_contains: ["database_dsn", "embedder_url", "embedder_model", "chunk_size"]
+  repo: codebaserag
+
+- question: "How are environment variables loaded for configuration?"
+  expected_files: ["src/coderag/config.py"]
+  answer_contains: ["pydantic-settings", "CODERAG_", ".env"]
+  repo: codebaserag
+
+- question: "What CLI commands does codebaserag expose?"
+  expected_files: ["src/coderag/cli.py"]
+  answer_contains: ["version", "ingest", "query", "eval"]
+  repo: codebaserag
+
+- question: "How does the ingest CLI command index a repository?"
+  expected_files: ["src/coderag/cli.py"]
+  answer_contains: ["OllamaEmbedder", "PgvectorStore", "run_ingest"]
+  repo: codebaserag
+
+- question: "What is the LlmClient port?"
+  expected_files: ["src/coderag/llm/ports.py"]
+  answer_contains: ["Protocol", "generate", "model_name"]
+  repo: codebaserag
+
+- question: "What is the Reranker port?"
+  expected_files: ["src/coderag/retrieval/ports.py"]
+  answer_contains: ["Protocol", "rerank", "top_k"]
+  repo: codebaserag
+
+- question: "Where are the hexagonal ports defined?"
+  expected_files: ["src/coderag/stores/ports.py", "src/coderag/llm/ports.py", "src/coderag/retrieval/ports.py"]
+  answer_contains: ["VectorStore", "Embedder", "LlmClient", "Reranker"]
+  repo: codebaserag
+
+- question: "What is the architecture principle about keeping I/O at the edges?"
+  expected_files: ["docs/architecture.md"]
+  answer_contains: ["pure core", "ports", "I/O at the edges", "no network"]
+  repo: codebaserag
+
+- question: "How are retrieval metrics like recall at 5 computed?"
+  expected_files: ["evals/metrics.py"]
+  answer_contains: ["recall_at_k", "expected_files", "top_k"]
+  repo: codebaserag
+
+- question: "What is the golden dataset format?"
+  expected_files: ["evals/dataset.py", "evals/golden/codebaserag.yaml"]
+  answer_contains: ["question", "expected_files", "answer_contains", "repo"]
+  repo: codebaserag
+
+- question: "Which database backs the default vector store?"
+  expected_files: ["src/coderag/stores/pgvector.py"]
+  answer_contains: ["postgres", "pgvector", "psycopg"]
+  repo: codebaserag
+
+- question: "How is the vector similarity score normalized in PgvectorStore?"
+  expected_files: ["src/coderag/stores/pgvector.py"]
+  answer_contains: ["1 - (embedding <=>", "score", "similarity"]
+  repo: codebaserag
+
+- question: "What Python version does the project target?"
+  expected_files: ["pyproject.toml", "docs/conventions.md"]
+  answer_contains: ["3.13", "requires-python"]
+  repo: codebaserag
+
+- question: "What lint and type-checking tools are mandated?"
+  expected_files: ["docs/conventions.md"]
+  answer_contains: ["ruff", "black", "mypy --strict"]
+  repo: codebaserag
+
+- question: "How are region markers used in source files?"
+  expected_files: ["docs/conventions.md"]
+  answer_contains: ["# region", "class", "two lines before"]
+  repo: codebaserag
+
+- question: "What is the structured output requirement for generation?"
+  expected_files: ["docs/architecture.md"]
+  answer_contains: ["Pydantic", "citations", "structured output", "no free-form"]
+  repo: codebaserag
+
+- question: "What is a Citation in this project?"
+  expected_files: ["src/coderag/types.py"]
+  answer_contains: ["path", "line_start", "line_end", "to_label"]
+  repo: codebaserag
+
+- question: "How does the Answer type represent confidence?"
+  expected_files: ["src/coderag/types.py"]
+  answer_contains: ["confidence", "0.0", "1.0", "confidence_verdict"]
+  repo: codebaserag
+
+- question: "What is the purpose of the retrieval subdomain?"
+  expected_files: ["docs/architecture.md"]
+  answer_contains: ["dense", "BM25", "fusion", "reranker"]
+  repo: codebaserag
+
+- question: "How does the ingest subdomain stay independent from retrieval?"
+  expected_files: ["docs/architecture.md"]
+  answer_contains: ["store", "only coupling", "CLI", "FastAPI"]
+  repo: codebaserag
+
+- question: "Which providers can the embedder adapter target?"
+  expected_files: ["src/coderag/llm/ollama_embedder.py"]
+  answer_contains: ["Ollama", "local", "nomic-embed-text", "API adapters"]
+  repo: codebaserag
+
+- question: "What is the InMemoryVectorStore used for?"
+  expected_files: ["src/coderag/stores/memory.py"]
+  answer_contains: ["cosine", "upsert", "query", "test"]
+  repo: codebaserag
+
+- question: "How are retrieval results represented in the core types?"
+  expected_files: ["src/coderag/types.py"]
+  answer_contains: ["RetrievalResult", "chunk", "score"]
+  repo: codebaserag
+
+- question: "What does the eval harness measure for the retrieval layer?"
+  expected_files: ["evals/harness.py", "evals/metrics.py"]
+  answer_contains: ["recall", "MRR", "nDCG", "deterministic"]
+  repo: codebaserag
+
+- question: "How is the eval regression guard enforced against the baseline?"
+  expected_files: ["evals/harness.py"]
+  answer_contains: ["assert_not_regressed", "baseline", "mean_recall", "ADR"]
+  repo: codebaserag
+
+- question: "Where is the project's evaluation baseline stored?"
+  expected_files: ["evals/baseline.json", "README.md"]
+  answer_contains: ["baseline", "json", "table", "current vs baseline"]
+  repo: codebaserag
