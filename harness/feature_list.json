@@ -1,0 +1,96 @@
+{
+  "project": {
+    "name": "codebaserag",
+    "parallel": false,
+    "modules": [
+      "architecture-catalog",
+      "decision-memory",
+      "performance-benchmarks",
+      "project-scanner",
+      "security-audit",
+      "wekan-tickets"
+    ],
+    "audit_level": "standard"
+  },
+  "features": [
+    {
+      "id": "F0",
+      "name": "phase0-setup",
+      "status": "done",
+      "depends_on": [],
+      "description": "Repo skeleton, pyproject tooling (ruff/black/mypy strict), src/coderag package, ports (Protocol), core domain types, trivial green test, GitHub Actions CI.",
+      "wekan_card": "eRXvcpH2kKWSm2C37"
+    },
+    {
+      "id": "F1",
+      "name": "phase1-ingest-pgvector",
+      "status": "done",
+      "depends_on": [
+        "F0"
+      ],
+      "description": "CLI `ingest` + naive `query` (dense, top-5). Readers (.md/.py/.toml/.yaml, .gitignore filter), chunkers (fixed/recursive/ast), Embedder port, PgvectorStore adapter. Index a real repo in < 2 min.",
+      "wekan_card": "DRrMDY7Zz54hLszXa"
+    },
+    {
+      "id": "F2",
+      "name": "phase2-eval-harness",
+      "status": "done",
+      "depends_on": [
+        "F1"
+      ],
+      "description": "Golden dataset v1 (~40 Q/A) in evals/golden, harness.py with deterministic retrieval metrics (recall@5, MRR, nDCG). Baseline documented in README.",
+      "wekan_card": "dQEx9MwvqqDxDLSty"
+    },
+    {
+      "id": "F3",
+      "name": "phase3-hybrid-rerank",
+      "status": "done",
+      "depends_on": [
+        "F2"
+      ],
+      "description": "BM25 + dense with Reciprocal Rank Fusion, optional cross-encoder reranker over top-20->top-5. Experiment table: dense vs hybrid vs hybrid+rerank.",
+      "wekan_card": "EqdrtRwy8CDcahrJA"
+    },
+    {
+      "id": "F4",
+      "name": "phase4-structured-generation",
+      "status": "done",
+      "depends_on": [
+        "F3"
+      ],
+      "description": "Prompt builder (few-shot) + Pydantic structured output with exact citations (path:line_start-line_end). Zero citations to non-existent paths over the dataset.",
+      "wekan_card": "JoBRmXBxyrMAzwrxB"
+    },
+    {
+      "id": "F5",
+      "name": "phase5-observability",
+      "status": "done",
+      "depends_on": [
+        "F4"
+      ],
+      "description": "Langfuse self-hosted trace per query (retrieval, rerank, prompt, response, cost, latency).",
+      "wekan_card": "GDoXpbTgjbWbnzM8L"
+    },
+    {
+      "id": "F6",
+      "name": "phase6-qdrant-adapter",
+      "status": "done",
+      "depends_on": [
+        "F1"
+      ],
+      "description": "Second VectorStore adapter (Qdrant) on the same eval suite. Comparative table pgvector vs Qdrant in an ADR.",
+      "wekan_card": "uP5wcQwrWajfXYopT"
+    },
+    {
+      "id": "F7",
+      "name": "phase7-api-compose",
+      "status": "done",
+      "depends_on": [
+        "F4",
+        "F5"
+      ],
+      "description": "FastAPI (/query, /ingest, /health) + docker-compose (app + postgres/pgvector + langfuse, qdrant profile). End-to-end demo from zero in one command.",
+      "wekan_card": "mT4Qro3Dg2ojKKphB"
+    }
+  ]
+}
