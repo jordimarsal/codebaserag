@@ -1,0 +1,131 @@
+# codebaserag stack
+#
+# Default (`docker compose up`): postgres/pgvector + the API app.
+# Optional profiles:
+#   langfuse  -> self-hosted Langfuse (clickhouse + redis + db + server + worker)
+#   qdrant    -> Qdrant vector store
+#
+# Copy `.env.example` to `.env` and adjust secrets/endpoints before deploying.
+
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_USER: ${CODERAG_DB_USER:-coderag}
+      POSTGRES_PASSWORD: ${CODERAG_DB_PASSWORD:-coderag}
+      POSTGRES_DB: ${CODERAG_DB_NAME:-coderag}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    ports:
+      - "${CODERAG_DB_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${CODERAG_DB_USER:-coderag} -d ${CODERAG_DB_NAME:-coderag}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    environment:
+      CODERAG_DATABASE_DSN: postgresql://${CODERAG_DB_USER:-coderag}:${CODERAG_DB_PASSWORD:-coderag}@db:5432/${CODERAG_DB_NAME:-coderag}
+      CODERAG_REPO: /repo
+      CODERAG_VECTOR_STORE: pgvector
+      CODERAG_EMBEDDER_URL: ${CODERAG_EMBEDDER_URL:-http://host.docker.internal:11434}
+      CODERAG_EMBEDDER_MODEL: ${CODERAG_EMBEDDER_MODEL:-nomic-embed-text}
+      CODERAG_LLM_BACKEND: ${CODERAG_LLM_BACKEND:-litellm}
+      CODERAG_LLM_MODEL: ${CODERAG_LLM_MODEL:-gpt-4o-mini}
+      CODERAG_OBSERVABILITY_BACKEND: ${CODERAG_OBSERVABILITY_BACKEND:-none}
+      CODERAG_LANGFUSE_HOST: http://langfuse-server:3000
+      CODERAG_LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
+      CODERAG_LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
+    volumes:
+      - ./:/repo:ro
+    ports:
+      - "${CODERAG_APP_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    profiles: ["", "langfuse", "qdrant"]
+
+  # ---- optional: Qdrant vector store ----
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "${CODERAG_QDRANT_PORT:-6333}:6333"
+    volumes:
+      - qdrant-data:/qdrant/storage
+    profiles: ["qdrant"]
+
+  # ---- optional: self-hosted Langfuse ----
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.10-alpine
+    environment:
+      CLICKHOUSE_DB: default
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD:-langfuse-clickhouse}
+    ports:
+      - "${LANGFUSE_CLICKHOUSE_PORT:-8123}:8123"
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+    profiles: ["langfuse"]
+
+  langfuse-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${LANGFUSE_DB_USER:-langfuse}
+      POSTGRES_PASSWORD: ${LANGFUSE_DB_PASSWORD:-langfuse}
+      POSTGRES_DB: ${LANGFUSE_DB_NAME:-langfuse}
+    volumes:
+      - langfuse-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${LANGFUSE_DB_USER:-langfuse}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    profiles: ["langfuse"]
+
+  langfuse-redis:
+    image: redis:7-alpine
+    profiles: ["langfuse"]
+
+  langfuse-server:
+    image: langfuse/langfuse:2
+    environment:
+      DATABASE_URL: postgresql://${LANGFUSE_DB_USER:-langfuse}:${LANGFUSE_DB_PASSWORD:-langfuse}@langfuse-db:5432/${LANGFUSE_DB_NAME:-langfuse}
+      CLICKHOUSE_URL: clickhouse://default:${LANGFUSE_CLICKHOUSE_PASSWORD:-langfuse-clickhouse}@clickhouse:8123/default
+      REDISHOST: langfuse-redis
+      REDISPORT: "6379"
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-pk-lf-dev}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-sk-lf-dev}
+      SALT: ${LANGFUSE_SALT:-change-me-salt}
+      NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:-change-me-nextauth}
+    ports:
+      - "${LANGFUSE_PORT:-3000}:3000"
+    depends_on:
+      langfuse-db:
+        condition: service_healthy
+      clickhouse:
+        condition: service_started
+      langfuse-redis:
+        condition: service_started
+    profiles: ["langfuse"]
+
+  langfuse-worker:
+    image: langfuse/langfuse:2
+    command: ["node", "worker"]
+    environment:
+      DATABASE_URL: postgresql://${LANGFUSE_DB_USER:-langfuse}:${LANGFUSE_DB_PASSWORD:-langfuse}@langfuse-db:5432/${LANGFUSE_DB_NAME:-langfuse}
+      CLICKHOUSE_URL: clickhouse://default:${LANGFUSE_CLICKHOUSE_PASSWORD:-langfuse-clickhouse}@clickhouse:8123/default
+      REDISHOST: langfuse-redis
+      REDISPORT: "6379"
+      SALT: ${LANGFUSE_SALT:-change-me-salt}
+    depends_on:
+      langfuse-server:
+        condition: service_started
+    profiles: ["langfuse"]
+
+volumes:
+  db-data:
+  qdrant-data:
+  clickhouse-data:
+  langfuse-db-data:
