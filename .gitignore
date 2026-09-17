@@ -11,3 +11,6 @@ wheels/
 .env
 .env.local
 .harness-wekan.env
+
+# agent workflow local state
+harness/
