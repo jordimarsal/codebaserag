@@ -1,6 +1,6 @@
 import psycopg
+from pgvector import Vector
 from pgvector.psycopg import register_vector
-from pgvector.psycopg.vector import Vector
 
 from coderag.stores.errors import StoreError
 from coderag.types import Chunk, Language, RetrievalResult

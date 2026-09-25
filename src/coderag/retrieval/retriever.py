@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Iterator
 from contextlib import contextmanager
 
 from coderag.observability.ports import Span, Tracer
@@ -40,7 +41,7 @@ class Retriever:
         self._tracer = tracer
 
     @contextmanager
-    def _trace(self, name: str, **attributes: object):
+    def _trace(self, name: str, **attributes: object) -> Iterator[Span]:
         if self._tracer is None:
             yield Span(name, **attributes)
             return

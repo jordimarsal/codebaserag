@@ -167,8 +167,7 @@ def run_generation_eval(
 
 # region GenerationCallable (structural)
 class GenerationCallable(Protocol):
-    def __call__(self, question: str, retrieved: list[RetrievalResult]) -> Answer:
-        ...
+    def __call__(self, question: str, retrieved: list[RetrievalResult]) -> Answer: ...
 
 
 # region load_baseline

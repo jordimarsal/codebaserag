@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 from coderag.types import Chunk, Language, RetrievalResult
 
@@ -58,15 +58,16 @@ class InMemoryBm25:
             for term in query_terms:
                 if term in self._df:
                     score += bm25_term_score(
-                        tf_by_term.get(term, 0), len(self._chunks), self._df[term],
-                        dl, self._avgdl,
+                        tf_by_term.get(term, 0),
+                        len(self._chunks),
+                        self._df[term],
+                        dl,
+                        self._avgdl,
                     )
             if score > 0.0:
                 scored.append((chunk, score))
         scored.sort(key=lambda pair: pair[1], reverse=True)
-        return [
-            RetrievalResult(chunk=chunk, score=score) for chunk, score in scored[:top_k]
-        ]
+        return [RetrievalResult(chunk=chunk, score=score) for chunk, score in scored[:top_k]]
 
 
 # region TantivyBm25
@@ -74,16 +75,16 @@ class TantivyBm25:
     def __init__(self, index_dir: str = ".bm25_index") -> None:
         import tantivy  # lazy: optional dependency
 
-        self._tantivy = tantivy
+        self._tantivy: Any = tantivy
         self._index_dir = index_dir
-        self._index = None
+        self._index: Any = None
 
     def index(self, chunks: list[Chunk]) -> None:
         schema = self._tantivy.SchemaBuilder()
         schema.add_text_field("path", stored=True)
         schema.add_text_field("body", stored=True)
         index = self._tantivy.Index(schema.build(), self._index_dir)
-        writer = index.writer()
+        writer: Any = index.writer()
         for chunk in chunks:
             writer.add_document(
                 path=chunk.path, body=chunk.text, _id=f"{chunk.path}:{chunk.line_start}"
@@ -104,7 +105,12 @@ class TantivyBm25:
             output.append(
                 RetrievalResult(
                     chunk=Chunk(
-                        path=path, line_start=0, line_end=0, text="", language=chunk_lang(path)
+                        path=path,
+                        line_start=0,
+                        line_end=0,
+                        text="",
+                        language=chunk_lang(path),
+                        hash="",  # not stored in the tantivy schema
                     ),
                     score=float(hit.score),
                 )
@@ -113,8 +119,9 @@ class TantivyBm25:
 
 
 def chunk_lang(path: str) -> "Language":
-    from coderag.ingest.readers import language_for
     from pathlib import Path
+
+    from coderag.ingest.readers import language_for
 
     return language_for(Path(path))
 
@@ -133,23 +140,26 @@ class PostgresFtsBm25:
     def search(self, query: str, top_k: int) -> list[RetrievalResult]:
         from coderag.types import Language
 
-        with self._psycopg.connect(self._dsn, autocommit=True) as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    "SELECT path, line_start, line_end, text, language, hash, "
-                    "ts_rank(to_tsvector('english', text), plainto_tsquery('english', %s)) AS rank "
-                    "FROM chunks "
-                    "WHERE to_tsvector('english', text) @@ plainto_tsquery('english', %s) "
-                    "ORDER BY rank DESC LIMIT %s",
-                    (query, query, top_k),
+        with self._psycopg.connect(self._dsn, autocommit=True) as conn, conn.cursor() as cur:
+            cur.execute(
+                "SELECT path, line_start, line_end, text, language, hash, "
+                "ts_rank(to_tsvector('english', text), plainto_tsquery('english', %s)) AS rank "
+                "FROM chunks "
+                "WHERE to_tsvector('english', text) @@ plainto_tsquery('english', %s) "
+                "ORDER BY rank DESC LIMIT %s",
+                (query, query, top_k),
+            )
+            return [
+                RetrievalResult(
+                    chunk=Chunk(
+                        path=row[0],
+                        line_start=row[1],
+                        line_end=row[2],
+                        text=row[3],
+                        language=Language(row[4]),
+                        hash=row[5],
+                    ),
+                    score=float(row[6]),
                 )
-                return [
-                    RetrievalResult(
-                        chunk=Chunk(
-                            path=row[0], line_start=row[1], line_end=row[2], text=row[3],
-                            language=Language(row[4]), hash=row[5],
-                        ),
-                        score=float(row[6]),
-                    )
-                    for row in cur.fetchall()
-                ]
+                for row in cur.fetchall()
+            ]

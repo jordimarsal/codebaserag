@@ -1,4 +1,4 @@
-from typing import Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 
 # region EmbedderError
@@ -13,7 +13,7 @@ class LlmClient(Protocol):
         """Return the model's raw completion for the given prompt."""
         ...
 
-    def generate_structured(self, prompt: str, schema: dict) -> dict:
+    def generate_structured(self, prompt: str, schema: dict[str, Any]) -> dict[str, Any]:
         """Return a JSON object conforming to ``schema`` for the given prompt."""
         ...
 

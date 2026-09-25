@@ -10,12 +10,20 @@ pytest.importorskip("qdrant_client")
 def _chunks() -> list[Chunk]:
     return [
         Chunk(
-            path="a.py", line_start=1, line_end=3, text="def f(): pass",
-            language=Language.PYTHON, hash="ha",
+            path="a.py",
+            line_start=1,
+            line_end=3,
+            text="def f(): pass",
+            language=Language.PYTHON,
+            hash="ha",
         ),
         Chunk(
-            path="b.py", line_start=1, line_end=3, text="class C: pass",
-            language=Language.PYTHON, hash="hb",
+            path="b.py",
+            line_start=1,
+            line_end=3,
+            text="class C: pass",
+            language=Language.PYTHON,
+            hash="hb",
         ),
     ]
 

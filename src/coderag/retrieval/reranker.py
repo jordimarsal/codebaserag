@@ -1,6 +1,5 @@
 import logging
 
-from coderag.retrieval.ports import Reranker
 from coderag.types import RetrievalResult
 
 logger = logging.getLogger("coderag.retrieval")

@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 from coderag.config import Settings
 from coderag.observability.ports import Span
@@ -11,7 +12,7 @@ class LangfuseTracer:
     def __init__(self, settings: Settings) -> None:
         from langfuse import Langfuse  # lazy: optional dependency
 
-        self._client = Langfuse(
+        self._client: Any = Langfuse(
             public_key=settings.langfuse_public_key,
             secret_key=settings.langfuse_secret_key,
             host=settings.langfuse_host,

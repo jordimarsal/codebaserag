@@ -11,7 +11,7 @@ from coderag.llm.litellm_client import LitellmClient
 from coderag.llm.llamacpp_embedder import LlamaCppEmbedder
 from coderag.llm.ollama_embedder import OllamaEmbedder
 from coderag.llm.ports import EmbedderError
-from coderag.retrieval.bm25 import InMemoryBm25, PostgresFtsBm25, TantivyBm25
+from coderag.retrieval.bm25 import Bm25Index, InMemoryBm25, PostgresFtsBm25, TantivyBm25
 from coderag.retrieval.reranker import CrossEncoderReranker
 from coderag.retrieval.retriever import Retriever
 from coderag.stores.errors import StoreError
@@ -59,6 +59,7 @@ def build_retriever(
     tracer: "Tracer | None" = None,
 ) -> Retriever:
     reranker = CrossEncoderReranker(settings.rerank_model) if "rerank" in strategy else None
+    bm25: Bm25Index
     if backend == "memory":
         embedder: Embedder = HashEmbedder()
         chunks = collect_chunks(repo, chunk_size=settings.chunk_size)

@@ -37,11 +37,9 @@ def create_app(settings: Settings) -> FastAPI:
         return JSONResponse(status_code=500, content=ErrorOut(error=str(exc)).model_dump())
 
     @app.post("/ingest")
-    def ingest(body: IngestRequest) -> dict:
+    def ingest(body: IngestRequest) -> "dict[str, int]":
         store, embedder = build_store(settings)
-        indexed = run_ingest(
-            Path(body.repo), embedder, store, chunk_size=settings.chunk_size
-        )
+        indexed = run_ingest(Path(body.repo), embedder, store, chunk_size=settings.chunk_size)
         return {"indexed": indexed}
 
     @app.post("/query", response_model=list[ChunkOut])

@@ -11,7 +11,7 @@ _DISTANCE_ALIASES = {
 
 
 def _point_id(chunk: Chunk) -> int:
-    raw = f"{chunk.path}:{chunk.line_start}:{chunk.line_end}:{chunk.hash}".encode("utf-8")
+    raw = f"{chunk.path}:{chunk.line_start}:{chunk.line_end}:{chunk.hash}".encode()
     return int(hashlib.md5(raw).hexdigest()[:16], 16)
 
 
@@ -98,6 +98,6 @@ class QdrantVectorStore:
 
     def count(self) -> int:
         try:
-            return self._client.count(collection_name=self._collection).count
+            return int(self._client.count(collection_name=self._collection).count)
         except Exception as exc:
             raise StoreError(f"qdrant count failed: {exc}") from exc

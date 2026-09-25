@@ -1,9 +1,9 @@
+import contextlib
 import json
-import urllib.request
 import urllib.error
+import urllib.request
 
 from coderag.llm.ollama_embedder import EmbedderError
-from coderag.stores.ports import Embedder
 
 
 # region LlamaCppEmbedder
@@ -49,10 +49,8 @@ class LlamaCppEmbedder:
                 data = json.loads(response.read())
         except urllib.error.HTTPError as exc:
             detail = ""
-            try:
+            with contextlib.suppress(OSError):
                 detail = exc.read().decode("utf-8", "ignore")
-            except OSError:
-                pass
             raise EmbedderError(f"llama.cpp embeddings request failed: {exc} {detail}") from exc
         except (urllib.error.URLError, OSError, ValueError) as exc:
             raise EmbedderError(f"llama.cpp embeddings request failed: {exc}") from exc
@@ -60,7 +58,6 @@ class LlamaCppEmbedder:
         if len(vectors) != len(batch):
             raise EmbedderError("llama.cpp returned a different number of vectors than texts")
         return vectors
-
 
     def dim(self) -> int:
         if self._dim is None:

@@ -5,8 +5,12 @@ from coderag.types import Chunk, Language, RetrievalResult
 
 def _chunk(path: str, score: float = 0.8) -> RetrievalResult:
     chunk = Chunk(
-        path=path, line_start=1, line_end=2, text=f"body {path}",
-        language=Language.PYTHON, hash=f"h-{path}",
+        path=path,
+        line_start=1,
+        line_end=2,
+        text=f"body {path}",
+        language=Language.PYTHON,
+        hash=f"h-{path}",
     )
     return RetrievalResult(chunk=chunk, score=score)
 
@@ -69,9 +73,7 @@ def test_missing_citations_raises() -> None:
 
 
 def test_malformed_citation_raises() -> None:
-    fake = FakeLlmClient(
-        {"q1": {"answer": "ok", "citations": [{"path": "a.py"}]}}
-    )
+    fake = FakeLlmClient({"q1": {"answer": "ok", "citations": [{"path": "a.py"}]}})
     try:
         Generator(fake).answer("q1", _retrieved(["a.py"]))
         raise AssertionError("expected GenerationError")

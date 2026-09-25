@@ -132,7 +132,9 @@ def eval(
     update_baseline: bool = typer.Option(False, help="Write a new evals/baseline.json."),
     adr: str = typer.Option(None, help="ADR reference to override a regression."),
     baseline_path: Path = typer.Option(Path("evals/baseline.json")),  # noqa: B008
-    experiment: bool = typer.Option(False, help="Run dense/hybrid/hybrid+rerank and write the table."),
+    experiment: bool = typer.Option(
+        False, help="Run dense/hybrid/hybrid+rerank and write the table."
+    ),
     kind: str = typer.Option("retrieval", help="retrieval | generation."),
 ) -> None:
     """Run the eval harness (deterministic recall/MRR/nDCG or grounded generation)."""
@@ -149,25 +151,34 @@ def eval(
         )
         if kind == "generation":
             generator = Generator(build_llm(settings))
-            report = run_generation_eval(entries, retriever.retrieve, generator.answer, top_k=top_k)
-        else:
-            report = run_retrieval_eval(entries, retriever.retrieve, top_k=top_k)
-    except (EvalError, RetrievalError, GenerationError, IngestError, StoreError, EmbedderError) as exc:
+            generation_report = run_generation_eval(
+                entries, retriever.retrieve, generator.answer, top_k=top_k
+            )
+            typer.echo(generation_report.to_markdown())
+            return
+        retrieval_report = run_retrieval_eval(entries, retriever.retrieve, top_k=top_k)
+    except (
+        EvalError,
+        RetrievalError,
+        GenerationError,
+        IngestError,
+        StoreError,
+        EmbedderError,
+    ) as exc:
         typer.secho(f"eval failed: {exc}", fg=typer.colors.RED, err=True)
         raise typer.Exit(code=1) from exc
 
-    typer.echo(report.to_markdown())
-    if kind == "retrieval" and update_baseline:
-        save_baseline(baseline_path, report)
+    typer.echo(retrieval_report.to_markdown())
+    if update_baseline:
+        save_baseline(baseline_path, retrieval_report)
         typer.echo(f"baseline written to {baseline_path}")
         return
-    if kind == "retrieval":
-        baseline = load_baseline(baseline_path)
-        try:
-            assert_not_regressed(report, baseline, adr=adr)
-        except AssertionError as exc:
-            typer.secho(str(exc), fg=typer.colors.RED, err=True)
-            raise typer.Exit(code=1) from exc
+    baseline = load_baseline(baseline_path)
+    try:
+        assert_not_regressed(retrieval_report, baseline, adr=adr)
+    except AssertionError as exc:
+        typer.secho(str(exc), fg=typer.colors.RED, err=True)
+        raise typer.Exit(code=1) from exc
 
 
 @app.command()

@@ -18,9 +18,7 @@ from coderag.types import Chunk, Language
 
 
 def _dense_retriever(store: InMemoryVectorStore) -> Retriever:
-    return Retriever(
-        store, InMemoryBm25(), HashEmbedder(), strategy="dense", top_k=5
-    )
+    return Retriever(store, InMemoryBm25(), HashEmbedder(), strategy="dense", top_k=5)
 
 
 def _entry(question: str, path: str) -> GoldenEntry:

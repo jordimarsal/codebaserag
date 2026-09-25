@@ -3,7 +3,9 @@ from coderag.types import Chunk, Language, RetrievalResult
 
 
 def _chunk(path: str, text: str) -> Chunk:
-    return Chunk(path=path, line_start=1, line_end=1, text=text, language=Language.PYTHON, hash=f"h-{path}")
+    return Chunk(
+        path=path, line_start=1, line_end=1, text=text, language=Language.PYTHON, hash=f"h-{path}"
+    )
 
 
 def _result(chunk: Chunk, score: float) -> RetrievalResult:

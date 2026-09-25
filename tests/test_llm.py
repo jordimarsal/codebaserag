@@ -1,6 +1,6 @@
 from coderag.llm.fake import FakeLlmClient
-from coderag.llm.ports import LlmClient
 from coderag.llm.litellm_client import LitellmClient
+from coderag.llm.ports import LlmClient
 
 
 def test_fake_llm_conforms_to_port() -> None:

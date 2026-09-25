@@ -1,5 +1,5 @@
-import urllib.request
 import urllib.error
+import urllib.request
 
 from coderag.compose import build_embedder
 from coderag.config import Settings

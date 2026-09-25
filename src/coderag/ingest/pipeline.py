@@ -50,9 +50,7 @@ def run_ingest(
     extensions: frozenset[str] | None = None,
     chunk_size: int = 40,
 ) -> int:
-    chunks = collect_chunks(
-        repo, strategy=strategy, extensions=extensions, chunk_size=chunk_size
-    )
+    chunks = collect_chunks(repo, strategy=strategy, extensions=extensions, chunk_size=chunk_size)
     if not chunks:
         logger.info("no chunks produced from %s", Path(repo))
         return 0

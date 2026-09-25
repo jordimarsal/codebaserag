@@ -31,6 +31,6 @@ def reciprocal_rank_fusion(
             best_chunk.setdefault(key, result.chunk)
     ordered = sorted(fused.items(), key=lambda pair: pair[1], reverse=True)
     return [
-        RetrievalResult(chunk=chunk, score=score) for key, score, chunk in
-        ((key, score, best_chunk[key]) for key, score in ordered)
+        RetrievalResult(chunk=chunk, score=score)
+        for key, score, chunk in ((key, score, best_chunk[key]) for key, score in ordered)
     ]

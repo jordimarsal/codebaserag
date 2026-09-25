@@ -1,7 +1,6 @@
 import json
 import logging
-
-from coderag.llm.ports import LlmClient
+from typing import Any
 
 logger = logging.getLogger("coderag.llm")
 
@@ -19,10 +18,12 @@ class LitellmClient:
         return self._model
 
     def generate(self, prompt: str) -> str:
-        response = self._completion(model=self._model, messages=[{"role": "user", "content": prompt}])
+        response = self._completion(
+            model=self._model, messages=[{"role": "user", "content": prompt}]
+        )
         return str(response.choices[0].message.content or "")
 
-    def generate_structured(self, prompt: str, schema: dict) -> dict:
+    def generate_structured(self, prompt: str, schema: dict[str, Any]) -> dict[str, Any]:
         response = self._completion(
             model=self._model,
             messages=[{"role": "user", "content": prompt}],
@@ -33,6 +34,7 @@ class LitellmClient:
         )
         content = str(response.choices[0].message.content or "")
         try:
-            return json.loads(content)
+            payload: dict[str, Any] = json.loads(content)
         except json.JSONDecodeError as exc:
             raise ValueError(f"LLM did not return valid JSON: {exc}") from exc
+        return payload

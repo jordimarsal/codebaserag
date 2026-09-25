@@ -1,15 +1,19 @@
+from evals.embedder import HashEmbedder
+
 from coderag.retrieval.reranker import CrossEncoderReranker
 from coderag.retrieval.retriever import RetrievalError, Retriever
-from coderag.retrieval.ports import Reranker
-from coderag.stores.ports import Embedder, VectorStore
+from coderag.stores.ports import Embedder
 from coderag.types import Chunk, Language, RetrievalResult
-from evals.embedder import HashEmbedder
 
 
 def _chunk(path: str) -> Chunk:
     return Chunk(
-        path=path, line_start=1, line_end=1, text=f"body {path}",
-        language=Language.PYTHON, hash=f"h-{path}",
+        path=path,
+        line_start=1,
+        line_end=1,
+        text=f"body {path}",
+        language=Language.PYTHON,
+        hash=f"h-{path}",
     )
 
 
@@ -18,9 +22,7 @@ class FakeVectorStore:
         self._chunks = chunks
 
     def query(self, vector: list[float], top_k: int) -> list[RetrievalResult]:
-        return [
-            RetrievalResult(chunk=chunk, score=0.5) for chunk in self._chunks[:top_k]
-        ]
+        return [RetrievalResult(chunk=chunk, score=0.5) for chunk in self._chunks[:top_k]]
 
 
 class FakeBm25:
@@ -33,9 +35,7 @@ class FakeBm25:
 
     def search(self, query: str, top_k: int) -> list[RetrievalResult]:
         self.searched.append(query)
-        return [
-            RetrievalResult(chunk=chunk, score=0.4) for chunk in self._chunks[:top_k]
-        ]
+        return [RetrievalResult(chunk=chunk, score=0.4) for chunk in self._chunks[:top_k]]
 
 
 class FakeReranker:

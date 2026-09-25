@@ -1,5 +1,7 @@
 import logging
+from collections.abc import Iterator
 from contextlib import contextmanager
+from typing import Any
 
 from coderag.llm.ports import LlmClient
 from coderag.observability.ports import Span, Tracer
@@ -7,7 +9,7 @@ from coderag.types import Answer, Citation, RetrievalResult
 
 logger = logging.getLogger("coderag.generation")
 
-DEFAULT_ANSWER_SCHEMA: dict = {
+DEFAULT_ANSWER_SCHEMA: dict[str, Any] = {
     "type": "object",
     "properties": {
         "answer": {"type": "string"},
@@ -37,14 +39,17 @@ class GenerationError(Exception):
 # region Generator
 class Generator:
     def __init__(
-        self, llm: LlmClient, schema: dict | None = None, tracer: Tracer | None = None
+        self,
+        llm: LlmClient,
+        schema: "dict[str, Any] | None" = None,
+        tracer: Tracer | None = None,
     ) -> None:
         self._llm = llm
         self._schema = schema or DEFAULT_ANSWER_SCHEMA
         self._tracer = tracer
 
     @contextmanager
-    def _trace(self, name: str, **attributes: object):
+    def _trace(self, name: str, **attributes: object) -> Iterator[Span]:
         if self._tracer is None:
             yield Span(name, **attributes)
             return
@@ -55,7 +60,9 @@ class Generator:
             logger.warning("tracer failed for span %s: %s", name, exc)
             yield Span(name, **attributes)
 
-    def answer(self, question: str, retrieved: list[RetrievalResult], *, strict: bool = False) -> Answer:
+    def answer(
+        self, question: str, retrieved: list[RetrievalResult], *, strict: bool = False
+    ) -> Answer:
         prompt = self._build_prompt(question, retrieved)
         with self._trace(
             "generation", model=self._llm.model_name(), prompt_chars=len(prompt)
@@ -105,7 +112,7 @@ class Generator:
             f"QUESTION:\n{question}\n\nCONTEXT:\n{context}"
         )
 
-    def _parse_citations(self, raw_cites: list) -> list[Citation]:
+    def _parse_citations(self, raw_cites: "list[Any]") -> list[Citation]:
         citations: list[Citation] = []
         for item in raw_cites:
             if not isinstance(item, dict):
