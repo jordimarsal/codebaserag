@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 
 import typer
 from evals.dataset import EvalError, load_golden
-from evals.embedder import HashEmbedder
 from evals.experiments.hybrid_vs_dense import run_experiment
 from evals.harness import (
     assert_not_regressed,
@@ -16,7 +15,13 @@ from evals.harness import (
 )
 
 from coderag import __version__
-from coderag.compose import build_embedder, build_llm, build_retriever
+from coderag.compose import (
+    _build_pgvector_store,
+    _build_qdrant_store,
+    build_embedder,
+    build_llm,
+    build_retriever,
+)
 from coderag.config import Settings
 from coderag.generation.generator import GenerationError, Generator
 from coderag.ingest.pipeline import IngestError, run_ingest
@@ -24,10 +29,9 @@ from coderag.llm.ollama_embedder import EmbedderError
 from coderag.observability import build_tracer
 from coderag.retrieval.retriever import RetrievalError
 from coderag.stores.errors import StoreError
-from coderag.stores.pgvector import PgvectorStore
-from coderag.stores.qdrant import QdrantVectorStore
 
 if TYPE_CHECKING:
+    from coderag.stores.ports import VectorStore
     from coderag.types import RetrievalResult
 
 app = typer.Typer(help="codebase-rag: hexagonal RAG over your own code.")
@@ -48,18 +52,12 @@ def ingest(
 ) -> None:
     """Index a local repository into the vector store."""
     settings = Settings()
-    embedder = build_embedder(settings)
-    dim = embedder.dim()
-    if store == "qdrant":
-        vector_store: VectorStore = QdrantVectorStore(
-            url=settings.qdrant_url,
-            collection=settings.qdrant_collection,
-            dim=dim,
-            distance=settings.qdrant_distance,
-        )
-    else:
-        vector_store = PgvectorStore(dsn=settings.database_dsn, dim=dim)
     try:
+        embedder = build_embedder(settings)
+        if store == "qdrant":
+            vector_store: VectorStore = _build_qdrant_store(settings, embedder.dim())
+        else:
+            vector_store = _build_pgvector_store(settings, embedder.dim())
         indexed = run_ingest(
             repo, embedder, vector_store, strategy=strategy, chunk_size=settings.chunk_size
         )

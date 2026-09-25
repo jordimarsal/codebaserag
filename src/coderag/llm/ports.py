@@ -1,6 +1,11 @@
 from typing import Protocol, runtime_checkable
 
 
+# region EmbedderError
+class EmbedderError(Exception):
+    """Raised when an embedder cannot produce vectors."""
+
+
 # region LlmClient
 @runtime_checkable
 class LlmClient(Protocol):

@@ -1,9 +1,6 @@
-from ollama import Client
+from coderag.llm.ports import EmbedderError
 
-
-# region EmbedderError
-class EmbedderError(Exception):
-    """Raised when the Ollama embedder cannot produce vectors."""
+__all__ = ["EmbedderError", "OllamaEmbedder"]
 
 
 # region OllamaEmbedder
@@ -11,6 +8,8 @@ class OllamaEmbedder:
     def __init__(
         self, model: str = "nomic-embed-text", base_url: str = "http://localhost:11434"
     ) -> None:
+        from ollama import Client  # lazy: optional dependency (embeddings extra)
+
         self._model = model
         self._client = Client(host=base_url.rstrip("/"))
 

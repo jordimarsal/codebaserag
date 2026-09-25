@@ -1,24 +1,51 @@
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from evals.embedder import HashEmbedder
+
 from coderag.config import Settings
+from coderag.generation.generator import GenerationError
 from coderag.ingest.pipeline import collect_chunks
 from coderag.llm.fake import FakeLlmClient
 from coderag.llm.litellm_client import LitellmClient
 from coderag.llm.llamacpp_embedder import LlamaCppEmbedder
 from coderag.llm.ollama_embedder import OllamaEmbedder
+from coderag.llm.ports import EmbedderError
 from coderag.retrieval.bm25 import InMemoryBm25, PostgresFtsBm25, TantivyBm25
 from coderag.retrieval.reranker import CrossEncoderReranker
 from coderag.retrieval.retriever import Retriever
+from coderag.stores.errors import StoreError
 from coderag.stores.memory import InMemoryVectorStore
-from coderag.stores.pgvector import PgvectorStore
 from coderag.stores.qdrant import QdrantVectorStore
-from evals.embedder import HashEmbedder
 
 if TYPE_CHECKING:
     from coderag.llm.ports import LlmClient
     from coderag.observability.ports import Tracer
     from coderag.stores.ports import Embedder, VectorStore
+
+
+def _build_pgvector_store(settings: Settings, dim: int) -> "VectorStore":
+    try:
+        from coderag.stores.pgvector import PgvectorStore  # lazy: optional dependency
+    except ImportError as exc:
+        raise StoreError(
+            f"pgvector backend needs the 'pgvector' extra: pip install 'codebaserag[pgvector]' ({exc})"
+        ) from exc
+    return PgvectorStore(dsn=settings.database_dsn, dim=dim)
+
+
+def _build_qdrant_store(settings: Settings, dim: int) -> "VectorStore":
+    try:
+        return QdrantVectorStore(
+            url=settings.qdrant_url,
+            collection=settings.qdrant_collection,
+            dim=dim,
+            distance=settings.qdrant_distance,
+        )
+    except ImportError as exc:
+        raise StoreError(
+            f"qdrant backend needs the 'qdrant' extra: pip install 'codebaserag[qdrant]' ({exc})"
+        ) from exc
 
 
 # region build_retriever
@@ -41,19 +68,14 @@ def build_retriever(
         bm25.index(chunks)
     elif backend == "pgvector":
         embedder = build_embedder(settings)
-        store = PgvectorStore(dsn=settings.database_dsn, dim=embedder.dim())
+        store = _build_pgvector_store(settings, embedder.dim())
         if settings.bm25_backend == "tantivy":
             bm25 = TantivyBm25()
         else:
             bm25 = PostgresFtsBm25(settings.database_dsn)
     elif backend == "qdrant":
         embedder = build_embedder(settings)
-        store = QdrantVectorStore(
-            url=settings.qdrant_url,
-            collection=settings.qdrant_collection,
-            dim=embedder.dim(),
-            distance=settings.qdrant_distance,
-        )
+        store = _build_qdrant_store(settings, embedder.dim())
         if settings.bm25_backend == "tantivy":
             bm25 = TantivyBm25()
         else:
@@ -76,14 +98,25 @@ def build_retriever(
 def build_llm(settings: Settings) -> "LlmClient":
     if settings.llm_backend == "fake":
         return FakeLlmClient()
-    return LitellmClient(model=settings.llm_model, backend=settings.llm_backend)
+    try:
+        return LitellmClient(model=settings.llm_model, backend=settings.llm_backend)
+    except ImportError as exc:
+        raise GenerationError(
+            f"llm backend needs the 'llm' extra: pip install 'codebaserag[llm]' "
+            f"or set CODERAG_LLM_BACKEND=fake ({exc})"
+        ) from exc
 
 
 # region build_embedder
 def build_embedder(settings: Settings) -> "Embedder":
     if settings.embedder_backend == "llamacpp":
         return LlamaCppEmbedder(model=settings.embedder_model, base_url=settings.embedder_url)
-    return OllamaEmbedder(model=settings.embedder_model, base_url=settings.embedder_url)
+    try:
+        return OllamaEmbedder(model=settings.embedder_model, base_url=settings.embedder_url)
+    except ImportError as exc:
+        raise EmbedderError(
+            f"ollama embedder needs the 'embeddings' extra: pip install 'codebaserag[embeddings]' ({exc})"
+        ) from exc
 
 
 # region build_store
@@ -93,15 +126,10 @@ def build_store(settings: Settings) -> "tuple[VectorStore, Embedder]":
         store: VectorStore = InMemoryVectorStore(dim=embedder.dim())
     elif settings.vector_store == "pgvector":
         embedder = build_embedder(settings)
-        store = PgvectorStore(dsn=settings.database_dsn, dim=embedder.dim())
+        store = _build_pgvector_store(settings, embedder.dim())
     elif settings.vector_store == "qdrant":
         embedder = build_embedder(settings)
-        store = QdrantVectorStore(
-            url=settings.qdrant_url,
-            collection=settings.qdrant_collection,
-            dim=embedder.dim(),
-            distance=settings.qdrant_distance,
-        )
+        store = _build_qdrant_store(settings, embedder.dim())
     else:
         raise ValueError(f"unknown vector_store: {settings.vector_store}")
     return store, embedder

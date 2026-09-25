@@ -8,6 +8,25 @@ Python 3.13 · Pydantic v2 · typer · FastAPI · pgvector (default) / Qdrant ·
 Anthropic embeddings & LLM · Langfuse observability. Tooling: `ruff`, `black`, `mypy --strict`,
 `pytest`.
 
+## Install (one command)
+
+```bash
+curl -LsSf https://raw.githubusercontent.com/jordimarsal/codebaserag/main/install.sh | sh
+```
+
+This installs [`uv`](https://docs.astral.sh/uv/) if it is not present (uv fetches Python 3.13 on
+its own — you do not need Python), then `uv tool install`s `coderag` in an isolated environment
+with the `pgvector,embeddings,llm,qdrant` extras. Override with `CODERAG_EXTRAS="..."` (or
+`CODERAG_EXTRAS=""` for a minimal install: memory store + fake LLM still work). Re-running the
+same command updates the tool.
+
+```bash
+coderag query "how does chunking work" --store memory --repo .   # offline, no services
+coderag ingest <repo>                                            # needs pgvector/qdrant + an embedder
+```
+
+Manual equivalent: `uv tool install --from "codebaserag[pgvector,embeddings,llm,qdrant] @ git+https://github.com/jordimarsal/codebaserag" coderag`
+
 ## Commands
 
 ```bash
