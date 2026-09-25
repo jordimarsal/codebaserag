@@ -30,7 +30,7 @@ else
     PACKAGE="codebaserag"
 fi
 
-uv tool install --reinstall --from "$PACKAGE @ $REPO_URL" coderag
+uv tool install --reinstall --from "$PACKAGE @ $REPO_URL" codebaserag
 
 # 3. Report.
 if command -v coderag >/dev/null 2>&1; then
