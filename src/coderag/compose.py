@@ -95,6 +95,55 @@ def build_retriever(
     )
 
 
+# region build_serving_components
+def build_serving_components(
+    settings: Settings,
+) -> "tuple[VectorStore, Embedder, Bm25Index]":
+    """Build the heavy retrieval components once for a long-lived process.
+
+    Unlike ``build_retriever`` (one-shot per CLI invocation), this runs a single
+    time at app startup: the memory backend indexes the configured repo here and
+    pgvector/qdrant open one store connection plus one BM25 backend, so request
+    handlers stop re-running the ingest pipeline per request (audit findings
+    api-query-memory-backend-reindex-per-request,
+    serve-memory-backend-per-request-corpus-reingest).
+    """
+    backend = settings.vector_store
+    if backend == "memory":
+        embedder: Embedder = HashEmbedder()
+        chunks = collect_chunks(Path(settings.repo), chunk_size=settings.chunk_size)
+        store: VectorStore = InMemoryVectorStore(dim=embedder.dim())
+        store.upsert(chunks, embedder.embed([chunk.text for chunk in chunks]))
+        bm25: Bm25Index = InMemoryBm25()
+        bm25.index(chunks)
+        return store, embedder, bm25
+    if backend == "pgvector":
+        embedder = build_embedder(settings)
+        store = _build_pgvector_store(settings, embedder.dim())
+        bm25 = (
+            TantivyBm25()
+            if settings.bm25_backend == "tantivy"
+            else PostgresFtsBm25(settings.database_dsn)
+        )
+        return store, embedder, bm25
+    if backend == "qdrant":
+        embedder = build_embedder(settings)
+        store = _build_qdrant_store(settings, embedder.dim())
+        bm25 = (
+            TantivyBm25()
+            if settings.bm25_backend == "tantivy"
+            else PostgresFtsBm25(settings.database_dsn)
+        )
+        return store, embedder, bm25
+    raise ValueError(f"unknown vector_store: {backend}")
+
+
+# region build_reranker
+def build_reranker(settings: Settings) -> CrossEncoderReranker:
+    """Build the cross-encoder reranker (cached by callers, never per request)."""
+    return CrossEncoderReranker(settings.rerank_model)
+
+
 # region build_llm
 def build_llm(settings: Settings) -> "LlmClient":
     if settings.llm_backend == "fake":

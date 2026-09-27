@@ -1,8 +1,13 @@
+from typing import TYPE_CHECKING
+
 from fastapi.testclient import TestClient
 
 from coderag.api.app import create_app
 from coderag.compose import build_retriever
 from coderag.config import Settings
+
+if TYPE_CHECKING:
+    import pytest
 
 SETTINGS = Settings(repo=".", vector_store="memory", llm_backend="fake")
 
@@ -90,3 +95,21 @@ def test_query_rejects_unknown_strategy_before_any_heavy_work() -> None:
     client = _client()
     response = client.post("/query", json={"question": "q", "strategy": "rerank"})
     assert response.status_code == 422
+
+
+def test_serving_components_built_once_not_per_request(monkeypatch: "pytest.MonkeyPatch") -> None:
+    import coderag.api.app as app_module
+
+    client = _client()
+    calls = {"n": 0}
+    real = app_module.collect_chunks
+
+    def counting(*args: object, **kwargs: object) -> object:
+        calls["n"] += 1
+        return real(*args, **kwargs)
+
+    monkeypatch.setattr(app_module, "collect_chunks", counting)
+    for _ in range(3):
+        response = client.post("/query", json={"question": "how does retrieval work"})
+        assert response.status_code == 200
+    assert calls["n"] == 0  # serving queries read the corpus zero times

@@ -11,19 +11,41 @@ from coderag.api.models import (
     IngestRequest,
     QueryRequest,
 )
-from coderag.compose import build_llm, build_retriever, build_store
+from coderag.compose import (
+    build_llm,
+    build_reranker,
+    build_serving_components,
+)
 from coderag.config import Settings
 from coderag.generation.generator import GenerationError, Generator
-from coderag.ingest.pipeline import IngestError, run_ingest
+from coderag.ingest.pipeline import IngestError, collect_chunks, run_ingest
 from coderag.llm.ollama_embedder import EmbedderError
 from coderag.observability import build_tracer
-from coderag.retrieval.retriever import RetrievalError
+from coderag.retrieval.reranker import CrossEncoderReranker
+from coderag.retrieval.retriever import RetrievalError, Retriever
 from coderag.stores.errors import StoreError
 
 
 # region create_app
 def create_app(settings: Settings) -> FastAPI:
     app = FastAPI(title="codebaserag", version="0.1.0")
+
+    # Heavy components are built exactly once per process: the memory backend
+    # indexes the configured repo here, and pgvector/qdrant open one store
+    # connection. Handlers only assemble the cheap Retriever wrapper per
+    # request (audit findings api-query-memory-backend-reindex-per-request,
+    # api.crossencoder-per-request-construction-no-preauth-gate).
+    store, embedder, bm25 = build_serving_components(settings)
+    tracer = build_tracer(settings)
+    llm = build_llm(settings)
+    reranker_cache: dict[str, CrossEncoderReranker] = {}
+
+    def _reranker_for(strategy: str) -> CrossEncoderReranker | None:
+        if "rerank" not in strategy:
+            return None
+        if "reranker" not in reranker_cache:
+            reranker_cache["reranker"] = build_reranker(settings)
+        return reranker_cache["reranker"]
 
     @app.exception_handler(RetrievalError)
     @app.exception_handler(GenerationError)
@@ -49,19 +71,25 @@ def create_app(settings: Settings) -> FastAPI:
                 status_code=400,
                 detail="repo does not match the configured ingest scope",
             )
-        store, embedder = build_store(settings)
+        if settings.vector_store == "memory":
+            # The in-memory serving corpus is indexed once at startup and its
+            # stores are append-only: report what a (re)index would produce
+            # instead of duplicating the corpus the handlers serve from.
+            indexed = len(collect_chunks(configured, chunk_size=settings.chunk_size))
+            return {"indexed": indexed}
         indexed = run_ingest(configured, embedder, store, chunk_size=settings.chunk_size)
         return {"indexed": indexed}
 
     @app.post("/query", response_model=list[ChunkOut])
     def query(body: QueryRequest) -> list[ChunkOut]:
-        tracer = build_tracer(settings)
-        retriever = build_retriever(
-            settings,
-            backend=settings.vector_store,
-            repo=Path(settings.repo),
+        retriever = Retriever(
+            store,
+            bm25,
+            embedder,
+            reranker=_reranker_for(body.strategy),
             strategy=body.strategy,
             top_k=body.top_k,
+            rerank_top_n=settings.rerank_top_n,
             tracer=tracer,
         )
         results = retriever.retrieve(body.question)
@@ -77,17 +105,18 @@ def create_app(settings: Settings) -> FastAPI:
 
     @app.post("/answer", response_model=AnswerOut)
     def answer(body: AnswerRequest) -> AnswerOut:
-        tracer = build_tracer(settings)
-        retriever = build_retriever(
-            settings,
-            backend=settings.vector_store,
-            repo=Path(settings.repo),
+        retriever = Retriever(
+            store,
+            bm25,
+            embedder,
+            reranker=_reranker_for(body.strategy),
             strategy=body.strategy,
             top_k=body.top_k,
+            rerank_top_n=settings.rerank_top_n,
             tracer=tracer,
         )
         retrieved = retriever.retrieve(body.question)
-        generated = Generator(build_llm(settings), tracer=tracer).answer(body.question, retrieved)
+        generated = Generator(llm, tracer=tracer).answer(body.question, retrieved)
         return AnswerOut(
             text=generated.text,
             citations=[c.to_label() for c in generated.citations],
