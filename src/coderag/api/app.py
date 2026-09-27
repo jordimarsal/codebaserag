@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
@@ -25,6 +26,21 @@ from coderag.retrieval.reranker import CrossEncoderReranker
 from coderag.retrieval.retriever import RetrievalError, Retriever
 from coderag.stores.errors import StoreError
 
+logger = logging.getLogger("coderag.api")
+
+_ERROR_TEXT_LIMIT = 300
+
+
+def _sanitize_error(exc: Exception, limit: int = _ERROR_TEXT_LIMIT) -> str:
+    """Client-safe error text: single line, bounded length.
+
+    Adapter exceptions embed downstream detail (remote embedder response
+    bodies, psycopg driver context); the full text goes to server logs, and
+    only this bounded form reaches unauthenticated clients (audit finding
+    api-error-handlers-relay-downstream-exception-text).
+    """
+    return " ".join(str(exc).split())[:limit]
+
 
 # region create_app
 def create_app(settings: Settings) -> FastAPI:
@@ -50,13 +66,22 @@ def create_app(settings: Settings) -> FastAPI:
     @app.exception_handler(RetrievalError)
     @app.exception_handler(GenerationError)
     async def _bad_request(_: Request, exc: Exception) -> JSONResponse:
-        return JSONResponse(status_code=400, content=ErrorOut(error=str(exc)).model_dump())
+        logger.warning("bad request: %s", exc, exc_info=True)
+        return JSONResponse(
+            status_code=400, content=ErrorOut(error=_sanitize_error(exc)).model_dump()
+        )
 
     @app.exception_handler(StoreError)
     @app.exception_handler(IngestError)
     @app.exception_handler(EmbedderError)
     async def _server_error(_: Request, exc: Exception) -> JSONResponse:
-        return JSONResponse(status_code=500, content=ErrorOut(error=str(exc)).model_dump())
+        # The response carries no downstream internals (driver/DSN context,
+        # remote embedder bodies); the full exception is logged server-side.
+        logger.error("request failed: %s", exc, exc_info=True)
+        return JSONResponse(
+            status_code=500,
+            content=ErrorOut(error=f"{type(exc).__name__} (details in server logs)").model_dump(),
+        )
 
     @app.post("/ingest")
     def ingest(body: IngestRequest) -> "dict[str, int]":

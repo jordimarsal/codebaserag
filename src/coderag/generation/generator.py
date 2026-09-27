@@ -56,11 +56,16 @@ class Generator:
             yield Span(name, **attributes)
             return
         try:
-            with self._tracer.span(name, **attributes) as span:
-                yield span
-        except Exception as exc:  # non-blocking (R8)
+            cm = self._tracer.span(name, **attributes)
+        except Exception as exc:  # tracer failure is non-blocking (R8)
             logger.warning("tracer failed for span %s: %s", name, exc)
             yield Span(name, **attributes)
+            return
+        # Body exceptions must propagate untouched: catching around the with
+        # body yielded twice and turned them into RuntimeError (found by the
+        # audit's error-hygiene regression test).
+        with cm as span:
+            yield span
 
     def answer(
         self, question: str, retrieved: list[RetrievalResult], *, strict: bool = False
@@ -72,7 +77,14 @@ class Generator:
             try:
                 data = self._llm.generate_structured(prompt, self._schema)
             except Exception as exc:
-                raise GenerationError(f"LLM structured generation failed: {exc}") from exc
+                logger.warning("structured generation failed: %s", exc, exc_info=True)
+                # The wrapped message names only the exception type: provider
+                # exception text (endpoint/model/auth detail) stays in the logs
+                # and out of client-visible errors (audit finding
+                # api-error-handlers-relay-downstream-exception-text).
+                raise GenerationError(
+                    f"LLM structured generation failed: {type(exc).__name__}"
+                ) from exc
             if not isinstance(data, dict):
                 raise GenerationError("structured output was not an object")
             text = data.get("answer")

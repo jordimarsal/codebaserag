@@ -159,3 +159,26 @@ def test_parse_model_ref_splits_revision() -> None:
     )
     assert parse_model_ref("bge-reranker-base") == ("bge-reranker-base", None)
     assert parse_model_ref("org/model@") == ("org/model", None)
+
+
+def test_trace_does_not_wrap_body_errors() -> None:
+    from coderag.observability import NoOpTracer
+    from coderag.stores.errors import StoreError
+
+    class ExplodingStore(FakeVectorStore):
+        def query(self, vector: list[float], top_k: int) -> list[RetrievalResult]:
+            raise StoreError("boom")
+
+    retriever = Retriever(
+        ExplodingStore([_chunk("a.py")]),
+        FakeBm25([_chunk("c.py")]),
+        _embedder(),
+        strategy="dense",
+        top_k=3,
+        tracer=NoOpTracer(),
+    )
+    try:
+        retriever.retrieve("q")
+        raise AssertionError("expected StoreError")
+    except StoreError:
+        pass  # propagated untouched, not RuntimeError("generator didn't stop")

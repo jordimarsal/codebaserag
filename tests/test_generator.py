@@ -109,3 +109,32 @@ def test_zero_citation_answer_is_not_grounded() -> None:
     answer = Generator(fake).answer("q1", _retrieved(["a.py"]))
     assert answer.payload["grounded"] is False
     assert answer.confidence == 0.0
+
+
+def test_generation_error_hides_provider_detail() -> None:
+    from coderag.llm.ports import LlmClient
+
+    class BrokenLlm(LlmClient):
+        def model_name(self) -> str:
+            return "broken"
+
+        def generate_structured(self, prompt: str, schema: object) -> object:
+            raise RuntimeError("provider https://api.internal SECRET-CANARY")
+
+    try:
+        Generator(BrokenLlm()).answer("q1", _retrieved(["a.py"]))
+        raise AssertionError("expected GenerationError")
+    except GenerationError as exc:
+        assert "SECRET-CANARY" not in str(exc)
+        assert "RuntimeError" in str(exc)
+
+
+def test_strict_ungrounded_raises_generation_error_with_tracer() -> None:
+    from coderag.observability import NoOpTracer
+
+    fake = FakeLlmClient({"q1": FakeLlmClient.ungrounded_answer()})
+    try:
+        Generator(fake, tracer=NoOpTracer()).answer("q1", _retrieved(["a.py"]), strict=True)
+        raise AssertionError("expected GenerationError")
+    except GenerationError:
+        pass  # propagated untouched even with an attached tracer

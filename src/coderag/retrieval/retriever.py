@@ -53,11 +53,16 @@ class Retriever:
             yield Span(name, **attributes)
             return
         try:
-            with self._tracer.span(name, **attributes) as span:
-                yield span
-        except Exception as exc:  # non-blocking (R8)
+            cm = self._tracer.span(name, **attributes)
+        except Exception as exc:  # tracer failure is non-blocking (R8)
             logger.warning("tracer failed for span %s: %s", name, exc)
             yield Span(name, **attributes)
+            return
+        # Body exceptions must propagate untouched: catching around the with
+        # body yielded twice and turned them into RuntimeError (found by the
+        # audit's error-hygiene regression test).
+        with cm as span:
+            yield span
 
     def retrieve(self, question: str) -> list[RetrievalResult]:
         if self._strategy == "dense":

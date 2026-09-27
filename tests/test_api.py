@@ -113,3 +113,29 @@ def test_serving_components_built_once_not_per_request(monkeypatch: "pytest.Monk
         response = client.post("/query", json={"question": "how does retrieval work"})
         assert response.status_code == 200
     assert calls["n"] == 0  # serving queries read the corpus zero times
+
+
+# region error hygiene (audit: api-error-handlers-relay-downstream-exception-text)
+def test_sanitize_error_is_bounded_and_single_line() -> None:
+    from coderag.api.app import _ERROR_TEXT_LIMIT, _sanitize_error
+
+    messy = "psycopg connect to 10.1.2.3:5432\nfailed\t" + "x" * 1000
+    out = _sanitize_error(messy)
+    assert "\n" not in out and "\t" not in out
+    assert len(out) <= _ERROR_TEXT_LIMIT
+
+
+def test_server_error_response_is_generic(monkeypatch: "pytest.MonkeyPatch") -> None:
+    from coderag.stores.errors import StoreError
+    from coderag.stores.memory import InMemoryVectorStore
+
+    def boom(self: InMemoryVectorStore, vector: list[float], top_k: int) -> object:
+        raise StoreError("connect to 10.1.2.3:5432 FAILED-SECRET-CANARY")
+
+    monkeypatch.setattr(InMemoryVectorStore, "query", boom)
+    client = TestClient(create_app(SETTINGS))
+    response = client.post("/query", json={"question": "q"})
+    assert response.status_code == 500
+    error = response.json()["error"]
+    assert "FAILED-SECRET-CANARY" not in error
+    assert "StoreError" in error
