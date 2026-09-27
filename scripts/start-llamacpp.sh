@@ -4,7 +4,8 @@
 # Configure via environment variables (all optional except LLAMACPP_MODEL):
 #   LLAMACPP_DIR       llama.cpp checkout dir (default: /home/jordi/ia/llama/llama.cpp)
 #   LLAMACPP_MODEL     path to the .gguf model to serve (REQUIRED for --embeddings use)
-#   LLAMACPP_HOST      bind host             (default: 0.0.0.0)
+#   LLAMACPP_HOST      bind host             (default: 127.0.0.1; the server has
+#                      no auth — expose it deliberately with LLAMACPP_HOST=0.0.0.0)
 #   LLAMACPP_PORT      listen port           (default: 8080)
 #   LLAMACPP_GPU       gpu layers (-ngl); -1 = all on GPU (default: -1)
 #   LLAMACPP_CTX       context size          (default: 8192)
@@ -13,7 +14,7 @@
 set -euo pipefail
 
 LLAMACPP_DIR="${LLAMACPP_DIR:-/home/jordi/ia/llama/llama.cpp}"
-LLAMACPP_HOST="${LLAMACPP_HOST:-0.0.0.0}"
+LLAMACPP_HOST="${LLAMACPP_HOST:-127.0.0.1}"
 LLAMACPP_PORT="${LLAMACPP_PORT:-8080}"
 LLAMACPP_GPU="${LLAMACPP_GPU:-99}"
 LLAMACPP_CTX="${LLAMACPP_CTX:-8192}"
