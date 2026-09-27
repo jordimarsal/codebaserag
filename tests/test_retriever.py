@@ -147,3 +147,15 @@ def test_reranker_falls_back_when_model_unavailable() -> None:
     results = retriever.retrieve("q")
     assert len(results) <= 3
     assert {r.chunk.path for r in results} <= {"a.py", "b.py", "c.py", "d.py"}
+
+
+# region revision pinning (audit: reranker.unpinned-hub-model-load)
+def test_parse_model_ref_splits_revision() -> None:
+    from coderag.retrieval.reranker import parse_model_ref
+
+    assert parse_model_ref("BAAI/bge-reranker-base@abc123") == (
+        "BAAI/bge-reranker-base",
+        "abc123",
+    )
+    assert parse_model_ref("bge-reranker-base") == ("bge-reranker-base", None)
+    assert parse_model_ref("org/model@") == ("org/model", None)
