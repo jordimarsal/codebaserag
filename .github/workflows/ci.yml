@@ -11,15 +11,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
       - name: Set up Python
         run: uv python install 3.13
+      # Sync into a project venv instead of `uv pip install --system`: the
+      # runner's system Python is externally managed (PEP 668) and would fail.
+      # `--locked` also keeps CI on exactly the versions recorded in uv.lock.
       - name: Install dev deps
-        run: uv pip install --system -e ".[dev]"
+        run: uv sync --locked --extra dev
       - name: Ruff
-        run: ruff check .
+        run: uv run ruff check .
       - name: Black
-        run: black --check .
+        run: uv run black --check .
       - name: Mypy (strict)
-        run: mypy --check-untyped-defs --strict .
+        run: uv run mypy --check-untyped-defs --strict .
       - name: Tests
-        run: pytest -q tests
+        run: uv run pytest -q tests
