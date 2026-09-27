@@ -1,9 +1,41 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
+import os
+
+from pydantic_settings import (
+    BaseSettings,
+    DotEnvSettingsSource,
+    PydanticBaseSettingsSource,
+    SettingsConfigDict,
+)
 
 
 # region Settings
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_prefix="CODERAG_", extra="ignore")
+    # Audit (config-envfile-cwd-endpoint-override): env_file='.env' resolved
+    # against the process CWD let a repository planted with a .env file select
+    # the outbound endpoints/DSN of the very process indexing it. Loading a
+    # dotenv file is now opt-in via CODERAG_ENV_FILE=<path> (per instantiation,
+    # so tests and CLIs can set it at runtime); plain CODERAG_* environment
+    # variables keep working everywhere.
+    model_config = SettingsConfigDict(env_prefix="CODERAG_", extra="ignore")
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        env_file = os.environ.get("CODERAG_ENV_FILE")
+        if env_file:
+            return (
+                init_settings,
+                env_settings,
+                DotEnvSettingsSource(settings_cls, env_file=env_file),
+                file_secret_settings,
+            )
+        return (init_settings, env_settings, file_secret_settings)
 
     database_dsn: str = "postgresql://localhost:5432/codebaserag"
     embedder_url: str = "http://localhost:11434"

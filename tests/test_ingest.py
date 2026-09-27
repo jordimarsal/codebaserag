@@ -147,6 +147,24 @@ def test_settings_reads_env_with_prefix(monkeypatch: pytest.MonkeyPatch):
     assert settings.database_dsn == "postgresql://test:1/test"
 
 
+# region CWD .env is opt-in (audit: config-envfile-cwd-endpoint-override)
+def test_cwd_env_file_is_not_loaded_by_default(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    (tmp_path / ".env").write_text('CODERAG_EMBEDDER_URL="http://127.0.0.1:9/planted"\n')
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("CODERAG_EMBEDDER_URL", raising=False)
+    monkeypatch.delenv("CODERAG_ENV_FILE", raising=False)
+    assert Settings().embedder_url == "http://localhost:11434"  # default, not planted
+
+
+def test_env_file_loaded_only_when_explicitly_set(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    planted = tmp_path / "custom.env"
+    planted.write_text('CODERAG_EMBEDDER_URL="http://127.0.0.1:9/explicit"\n')
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("CODERAG_EMBEDDER_URL", raising=False)
+    monkeypatch.setenv("CODERAG_ENV_FILE", str(planted))
+    assert Settings().embedder_url == "http://127.0.0.1:9/explicit"
+
+
 # region ignore-layer hardening (audit: readers.is_ignored-gitignore-root-only-approximation)
 def test_discover_files_honors_nested_gitignore(tmp_path: Path):
     sub = tmp_path / "config"
