@@ -107,6 +107,31 @@ def test_unknown_strategy_raises() -> None:
         pass
 
 
+# region bounds (defense in depth for non-API callers)
+def test_retriever_clamps_requested_limits() -> None:
+    from coderag.retrieval.retriever import MAX_CANDIDATE_K, MAX_TOP_K
+
+    seen: list[int] = []
+
+    class RecordingStore(FakeVectorStore):
+        def query(self, vector: list[float], top_k: int) -> list[RetrievalResult]:
+            seen.append(top_k)
+            return super().query(vector, top_k)
+
+    chunks = [_chunk(f"{i}.py") for i in range(3)]
+    retriever = Retriever(
+        RecordingStore(chunks),
+        FakeBm25(chunks),
+        _embedder(),
+        strategy="hybrid",
+        top_k=10**9,
+        rerank_top_n=10**9,
+    )
+    retriever.retrieve("q")
+    assert seen and all(k <= MAX_CANDIDATE_K for k in seen), seen
+    assert retriever._top_k <= MAX_TOP_K
+
+
 # region R11 fallback (reranker model unavailable)
 def test_reranker_falls_back_when_model_unavailable() -> None:
     reranker = CrossEncoderReranker("bge-reranker-base")  # sentence_transformers likely absent

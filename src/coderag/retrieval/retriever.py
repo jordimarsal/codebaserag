@@ -11,6 +11,13 @@ from coderag.types import RetrievalResult
 
 logger = logging.getLogger("coderag.retrieval")
 
+# Request-independent bounds (audit findings api-query-topk-unbounded-limit,
+# bm25.pgfts-unbounded-limit-full-rank-fetchall): even trusted CLI callers get a
+# ceiling, so a mistyped --top-k cannot turn one retrieval into an unbounded
+# store scan / LIMIT / rerank fan-out. The API schema bounds requests further.
+MAX_TOP_K = 100
+MAX_CANDIDATE_K = 200
+
 
 # region RetrievalError
 class RetrievalError(Exception):
@@ -36,8 +43,8 @@ class Retriever:
         self._embedder = embedder
         self._reranker = reranker
         self._strategy = strategy
-        self._top_k = top_k
-        self._rerank_top_n = rerank_top_n
+        self._top_k = max(1, min(int(top_k), MAX_TOP_K))
+        self._rerank_top_n = max(1, min(int(rerank_top_n), MAX_TOP_K))
         self._tracer = tracer
 
     @contextmanager
@@ -61,7 +68,7 @@ class Retriever:
         if self._strategy not in ("hybrid", "hybrid+rerank"):
             raise RetrievalError(f"unknown retrieval strategy: {self._strategy}")
 
-        candidate_k = max(self._top_k, self._rerank_top_n)
+        candidate_k = min(max(self._top_k, self._rerank_top_n), MAX_CANDIDATE_K)
         with self._trace("retrieval", strategy=self._strategy, top_k=self._top_k) as span:
             dense = self._store.query(self._embed(question), candidate_k)
             lexical = self._bm25.search(question, candidate_k)
