@@ -66,3 +66,27 @@ def test_ingest_rejects_repo_outside_configured_scope() -> None:
     response = client.post("/ingest", json={"repo": "/tmp"})
     assert response.status_code == 400
     assert "scope" in response.json()["detail"]
+
+
+def test_query_rejects_unbounded_top_k() -> None:
+    client = _client()
+    response = client.post("/query", json={"question": "q", "top_k": 10**9})
+    assert response.status_code == 422
+
+
+def test_query_rejects_negative_and_zero_top_k() -> None:
+    client = _client()
+    assert client.post("/query", json={"question": "q", "top_k": 0}).status_code == 422
+    assert client.post("/query", json={"question": "q", "top_k": -5}).status_code == 422
+
+
+def test_query_rejects_oversized_question() -> None:
+    client = _client()
+    response = client.post("/query", json={"question": "a" * 2001})
+    assert response.status_code == 422
+
+
+def test_query_rejects_unknown_strategy_before_any_heavy_work() -> None:
+    client = _client()
+    response = client.post("/query", json={"question": "q", "strategy": "rerank"})
+    assert response.status_code == 422
