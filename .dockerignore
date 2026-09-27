@@ -1,0 +1,21 @@
+# Keep the build context to the intended release inputs (audit hardening:
+# `build: .` used to upload the entire checkout, including .env and caches).
+.git
+.gitignore
+.venv
+.env
+.env.*
+!.env.example
+dist/
+build/
+__pycache__/
+**/__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.harness-wekan.env
+harness/
+.opencode/
+docs/
+tests/
+scripts/

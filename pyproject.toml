@@ -37,7 +37,10 @@ dev = [
 ]
 
 [build-system]
-requires = ["hatchling"]
+# Cap the build backend: pip resolves it fresh in the isolated build env, and
+# an unversioned requirement let build-time code float (audit finding
+# dockerfile-pip-install-unbound-lowerbounds-unused-lockfile).
+requires = ["hatchling>=1.26,<2"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
