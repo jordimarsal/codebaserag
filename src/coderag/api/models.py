@@ -3,7 +3,9 @@ from pydantic import BaseModel
 
 # region IngestRequest
 class IngestRequest(BaseModel):
-    repo: str
+    """Omit `repo` to use the operator-configured scope (`Settings.repo`)."""
+
+    repo: str | None = None
 
 
 # region QueryRequest

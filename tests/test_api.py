@@ -52,3 +52,17 @@ def test_bad_input_returns_422() -> None:
     client = _client()
     response = client.post("/query", json={})  # missing required 'question'
     assert response.status_code == 422
+
+
+def test_ingest_defaults_to_configured_scope() -> None:
+    client = _client()
+    ingest = client.post("/ingest", json={})  # repo omitted -> Settings.repo
+    assert ingest.status_code == 200
+    assert ingest.json()["indexed"] > 0
+
+
+def test_ingest_rejects_repo_outside_configured_scope() -> None:
+    client = _client()
+    response = client.post("/ingest", json={"repo": "/tmp"})
+    assert response.status_code == 400
+    assert "scope" in response.json()["detail"]

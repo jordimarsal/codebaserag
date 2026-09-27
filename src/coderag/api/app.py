@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 
 from coderag.api.models import (
@@ -38,8 +38,19 @@ def create_app(settings: Settings) -> FastAPI:
 
     @app.post("/ingest")
     def ingest(body: IngestRequest) -> "dict[str, int]":
+        configured = Path(settings.repo).resolve()
+        requested = Path(body.repo if body.repo is not None else settings.repo).resolve()
+        if requested != configured:
+            # Security invariant: the API only ever indexes the operator-configured
+            # repository. A caller-supplied path would turn this endpoint into an
+            # arbitrary-directory read primitive (see audit finding
+            # api-unauth-ingest-repo-scope-override).
+            raise HTTPException(
+                status_code=400,
+                detail="repo does not match the configured ingest scope",
+            )
         store, embedder = build_store(settings)
-        indexed = run_ingest(Path(body.repo), embedder, store, chunk_size=settings.chunk_size)
+        indexed = run_ingest(configured, embedder, store, chunk_size=settings.chunk_size)
         return {"indexed": indexed}
 
     @app.post("/query", response_model=list[ChunkOut])
