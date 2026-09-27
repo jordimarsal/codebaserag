@@ -85,3 +85,27 @@ def test_confidence_clamped_to_one() -> None:
     fake = FakeLlmClient({"q1": FakeLlmClient.grounded_answer(["a.py"])})
     answer = Generator(fake).answer("q1", _retrieved(["a.py"], score=2.0))
     assert answer.confidence == 1.0
+
+
+# region grounding verdict integrity (audit: generator.payload.model-grounded-override)
+def test_model_grounded_key_cannot_override_verdict() -> None:
+    fake = FakeLlmClient(
+        {
+            "q1": {
+                "answer": "see ghost.py",
+                "citations": [{"path": "ghost.py", "line_start": 1, "line_end": 1}],
+                "confidence": 0.9,
+                "grounded": "true",  # any truthy value would coerce via bool()
+            }
+        }
+    )
+    answer = Generator(fake).answer("q1", _retrieved(["a.py"]))
+    assert answer.payload["grounded"] is False  # computed verdict wins
+    assert answer.confidence == 0.0
+
+
+def test_zero_citation_answer_is_not_grounded() -> None:
+    fake = FakeLlmClient({"q1": {"answer": "cannot answer", "citations": []}})
+    answer = Generator(fake).answer("q1", _retrieved(["a.py"]))
+    assert answer.payload["grounded"] is False
+    assert answer.confidence == 0.0

@@ -11,12 +11,14 @@ logger = logging.getLogger("coderag.generation")
 
 DEFAULT_ANSWER_SCHEMA: dict[str, Any] = {
     "type": "object",
+    "additionalProperties": False,
     "properties": {
         "answer": {"type": "string"},
         "citations": {
             "type": "array",
             "items": {
                 "type": "object",
+                "additionalProperties": False,
                 "properties": {
                     "path": {"type": "string"},
                     "line_start": {"type": "integer"},
@@ -97,7 +99,10 @@ class Generator:
             citations=tuple(citations),
             confidence=confidence,
             model=self._llm.model_name(),
-            payload={"grounded": grounded, **data},
+            # The deterministic verdict is spread LAST so a model-controlled
+            # 'grounded' key in the raw JSON cannot overwrite it (audit finding
+            # generator.payload.model-grounded-override).
+            payload={**data, "grounded": grounded},
         )
 
     # region helpers
@@ -129,6 +134,10 @@ class Generator:
         return citations
 
     def _grounded(self, citations: list[Citation], retrieved: list[RetrievalResult]) -> bool:
+        if not citations:
+            # Zero-citation answers (refusals, injected no-citation payloads)
+            # are not evidence of grounding (audit hardening on vacuous all()).
+            return False
         keys = {(r.chunk.path, r.chunk.line_start, r.chunk.line_end) for r in retrieved}
         return all((c.path, c.line_start, c.line_end) in keys for c in citations)
 
