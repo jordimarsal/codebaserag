@@ -1,6 +1,6 @@
 [project]
 name = "codebaserag"
-version = "0.1.0"
+version = "0.1.1"
 description = "Hexagonal RAG over your own codebase with deterministic eval-first core."
 readme = "README.md"
 requires-python = ">=3.13"

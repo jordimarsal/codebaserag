@@ -11,21 +11,25 @@ Anthropic embeddings & LLM · Langfuse observability. Tooling: `ruff`, `black`, 
 ## Install (one command)
 
 ```bash
-curl -LsSf https://raw.githubusercontent.com/jordimarsal/codebaserag/main/install.sh | sh
+CODERAG_REF=v0.1.1 curl -LsSf https://raw.githubusercontent.com/jordimarsal/codebaserag/v0.1.1/install.sh | sh
 ```
+
+Both the installer and the package source are pinned to the `v0.1.1` ref above — prefer a
+pinned ref over `main` so the code you run is always a reviewed release (audit finding
+`install-sh-curlsh-unpinned-git-main-bootstrap`).
 
 This installs [`uv`](https://docs.astral.sh/uv/) if it is not present (uv fetches Python 3.13 on
 its own — you do not need Python), then `uv tool install`s `coderag` in an isolated environment
 with the `pgvector,embeddings,llm,qdrant` extras. Override with `CODERAG_EXTRAS="..."` (or
 `CODERAG_EXTRAS=""` for a minimal install: memory store + fake LLM still work). Re-running the
-same command updates the tool.
+same command re-installs that ref; to update, bump `CODERAG_REF` to the newer tag.
 
 ```bash
 coderag query "how does chunking work" --store memory --repo .   # offline, no services
 coderag ingest <repo>                                            # needs pgvector/qdrant + an embedder
 ```
 
-Manual equivalent: `uv tool install --from "codebaserag[pgvector,embeddings,llm,qdrant] @ git+https://github.com/jordimarsal/codebaserag" coderag`
+Manual equivalent: `uv tool install --from "codebaserag[pgvector,embeddings,llm,qdrant] @ git+https://github.com/jordimarsal/codebaserag@v0.1.1" coderag`
 
 ## Commands
 
