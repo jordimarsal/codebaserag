@@ -25,3 +25,6 @@ class Settings(BaseSettings):
     qdrant_collection: str = "coderag"
     qdrant_distance: str = "Cosine"
     vector_store: str = "pgvector"
+    ingest_max_file_bytes: int = 1_000_000
+    ingest_max_files: int = 10_000
+    ingest_max_total_bytes: int = 64_000_000

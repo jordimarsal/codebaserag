@@ -59,7 +59,14 @@ def ingest(
         else:
             vector_store = _build_pgvector_store(settings, embedder.dim())
         indexed = run_ingest(
-            repo, embedder, vector_store, strategy=strategy, chunk_size=settings.chunk_size
+            repo,
+            embedder,
+            vector_store,
+            strategy=strategy,
+            chunk_size=settings.chunk_size,
+            max_file_bytes=settings.ingest_max_file_bytes,
+            max_files=settings.ingest_max_files,
+            max_total_bytes=settings.ingest_max_total_bytes,
         )
     except (IngestError, StoreError, EmbedderError) as exc:
         typer.secho(f"ingest failed: {exc}", fg=typer.colors.RED, err=True)

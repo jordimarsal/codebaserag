@@ -75,9 +75,25 @@ def create_app(settings: Settings) -> FastAPI:
             # The in-memory serving corpus is indexed once at startup and its
             # stores are append-only: report what a (re)index would produce
             # instead of duplicating the corpus the handlers serve from.
-            indexed = len(collect_chunks(configured, chunk_size=settings.chunk_size))
+            indexed = len(
+                collect_chunks(
+                    configured,
+                    chunk_size=settings.chunk_size,
+                    max_file_bytes=settings.ingest_max_file_bytes,
+                    max_files=settings.ingest_max_files,
+                    max_total_bytes=settings.ingest_max_total_bytes,
+                )
+            )
             return {"indexed": indexed}
-        indexed = run_ingest(configured, embedder, store, chunk_size=settings.chunk_size)
+        indexed = run_ingest(
+            configured,
+            embedder,
+            store,
+            chunk_size=settings.chunk_size,
+            max_file_bytes=settings.ingest_max_file_bytes,
+            max_files=settings.ingest_max_files,
+            max_total_bytes=settings.ingest_max_total_bytes,
+        )
         return {"indexed": indexed}
 
     @app.post("/query", response_model=list[ChunkOut])

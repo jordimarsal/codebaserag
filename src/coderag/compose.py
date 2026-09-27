@@ -111,7 +111,13 @@ def build_serving_components(
     backend = settings.vector_store
     if backend == "memory":
         embedder: Embedder = HashEmbedder()
-        chunks = collect_chunks(Path(settings.repo), chunk_size=settings.chunk_size)
+        chunks = collect_chunks(
+            Path(settings.repo),
+            chunk_size=settings.chunk_size,
+            max_file_bytes=settings.ingest_max_file_bytes,
+            max_files=settings.ingest_max_files,
+            max_total_bytes=settings.ingest_max_total_bytes,
+        )
         store: VectorStore = InMemoryVectorStore(dim=embedder.dim())
         store.upsert(chunks, embedder.embed([chunk.text for chunk in chunks]))
         bm25: Bm25Index = InMemoryBm25()
