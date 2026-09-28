@@ -1,5 +1,7 @@
 # codebaserag
 
+[![CI](https://github.com/jordimarsal/codebaserag/actions/workflows/ci.yml/badge.svg)](https://github.com/jordimarsal/codebaserag/actions/workflows/ci.yml)
+
 Hexagonal RAG over your own codebase, with a deterministic, eval-first core.
 
 ## Stack
