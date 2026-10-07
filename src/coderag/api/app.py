@@ -83,7 +83,12 @@ def create_app(settings: Settings) -> FastAPI:
             content=ErrorOut(error=f"{type(exc).__name__} (details in server logs)").model_dump(),
         )
 
-    @app.post("/ingest")
+    @app.post(
+        "/ingest",
+        responses={
+            400: {"description": "repo does not match the configured ingest scope"},
+        },
+    )
     def ingest(body: IngestRequest) -> "dict[str, int]":
         configured = Path(settings.repo).resolve()
         requested = Path(body.repo if body.repo is not None else settings.repo).resolve()
@@ -121,7 +126,7 @@ def create_app(settings: Settings) -> FastAPI:
         )
         return {"indexed": indexed}
 
-    @app.post("/query", response_model=list[ChunkOut])
+    @app.post("/query")
     def query(body: QueryRequest) -> list[ChunkOut]:
         retriever = Retriever(
             store,
@@ -144,7 +149,7 @@ def create_app(settings: Settings) -> FastAPI:
             for r in results
         ]
 
-    @app.post("/answer", response_model=AnswerOut)
+    @app.post("/answer")
     def answer(body: AnswerRequest) -> AnswerOut:
         retriever = Retriever(
             store,

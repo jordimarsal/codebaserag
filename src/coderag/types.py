@@ -50,6 +50,14 @@ class RetrievalResult:
 
 
 # region Answer
+def _confidence_verdict(confidence: float) -> str:
+    if confidence >= 0.8:
+        return "high"
+    if confidence >= 0.5:
+        return "medium"
+    return "low"
+
+
 @dataclass(frozen=True)
 class Answer:
     text: str
@@ -62,8 +70,4 @@ class Answer:
     def __post_init__(self) -> None:
         if not 0.0 <= self.confidence <= 1.0:
             raise ValueError("confidence must be between 0.0 and 1.0")
-        object.__setattr__(
-            self,
-            "confidence_verdict",
-            "high" if self.confidence >= 0.8 else "medium" if self.confidence >= 0.5 else "low",
-        )
+        object.__setattr__(self, "confidence_verdict", _confidence_verdict(self.confidence))

@@ -28,6 +28,6 @@ def ndcg_at_k(retrieved: list[str], relevant: set[str], k: int) -> float:
     gains = [1.0 if file in relevant else 0.0 for file in retrieved[:k]]
     ideal = [1.0 for _ in range(min(k, len(relevant)))]
     denominator = dcg(ideal)
-    if denominator == 0.0:
+    if denominator <= 0.0:
         return 0.0
     return dcg(gains) / denominator

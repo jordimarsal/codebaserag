@@ -73,9 +73,7 @@ class QdrantVectorStore:
         except Exception as exc:
             raise StoreError(f"qdrant upsert failed: {exc}") from exc
 
-    def query(
-        self, vector: list[float], top_k: int, language: object = None
-    ) -> list[RetrievalResult]:
+    def query(self, vector: list[float], top_k: int) -> list[RetrievalResult]:
         try:
             response = self._client.query_points(
                 collection_name=self._collection, query=vector, limit=top_k

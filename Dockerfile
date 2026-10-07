@@ -13,6 +13,11 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
+# Never serve as root: the workload only needs to read /repo and talk to the
+# DB/embedder (audit hardening: image had no USER directive). Created early so
+# the dependency and application layers stay separate and cacheable.
+RUN useradd --create-home --uid 10001 appuser
+
 # Dependency layer first: pinned, hash-verified, and independent of app code.
 COPY requirements.lock ./
 RUN pip install --no-cache-dir -r requirements.lock
@@ -25,7 +30,6 @@ RUN pip install --no-deps .
 
 # Never serve as root: the workload only needs to read /repo and talk to the
 # DB/embedder (audit hardening: image had no USER directive).
-RUN useradd --create-home --uid 10001 appuser
 USER appuser
 
 EXPOSE 8000

@@ -55,9 +55,7 @@ class PgvectorStore:
         except psycopg.Error as exc:
             raise StoreError(f"upsert failed: {exc}") from exc
 
-    def query(
-        self, vector: list[float], top_k: int, language: object = None
-    ) -> list[RetrievalResult]:
+    def query(self, vector: list[float], top_k: int) -> list[RetrievalResult]:
         try:
             with self._connect() as conn:
                 register_vector(conn)

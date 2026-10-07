@@ -106,7 +106,8 @@ def test_pipeline_end_to_end(tmp_path: Path):
     store = FakeStore()
     indexed = run_ingest(tmp_path, embedder, store)
     assert indexed >= 1
-    assert store.chunks and len(store.chunks) == indexed
+    assert store.chunks
+    assert len(store.chunks) == indexed
     assert all(isinstance(c, Chunk) for c in store.chunks)
 
 
@@ -128,8 +129,9 @@ def test_pipeline_raises_on_embedding_error(tmp_path: Path):
         def dim(self) -> int:
             return 3
 
+    store = FakeStore()
     with pytest.raises(IngestError):
-        run_ingest(tmp_path, BrokenEmbedder(), FakeStore())
+        run_ingest(tmp_path, BrokenEmbedder(), store)
 
 
 # region R10 port conformance
@@ -215,7 +217,8 @@ def test_collect_chunks_skips_oversized_file(tmp_path: Path):
     (tmp_path / "big.py").write_text("x" * 5000)
     (tmp_path / "small.py").write_text("x = 1")
     chunks = collect_chunks(tmp_path, max_file_bytes=1000)
-    assert chunks and all("big.py" not in chunk.path for chunk in chunks)
+    assert chunks
+    assert all("big.py" not in chunk.path for chunk in chunks)
 
 
 def test_collect_chunks_raises_when_file_cap_exceeded(tmp_path: Path):

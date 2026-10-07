@@ -74,13 +74,18 @@ def ingest(
     typer.echo(f"indexed {indexed} chunks from {repo} (top_k={top_k})")
 
 
+_STRATEGY_HELP = "dense | hybrid | hybrid+rerank."
+_STORE_HELP = "Backend: pgvector | memory."
+_REPO_HELP = "Repo to index (memory backend only)."
+
+
 @app.command()
 def query(
     question: str = typer.Argument(..., help="Natural-language question."),
     top_k: int = typer.Option(5, help="Number of chunks to retrieve."),
-    strategy: str = typer.Option("dense", help="dense | hybrid | hybrid+rerank."),
-    store: str = typer.Option("pgvector", help="Backend: pgvector | memory."),
-    repo: Path = typer.Option(Path("."), help="Repo to index (memory backend only)."),  # noqa: B008
+    strategy: str = typer.Option("dense", help=_STRATEGY_HELP),
+    store: str = typer.Option("pgvector", help=_STORE_HELP),
+    repo: Path = typer.Option(Path("."), help=_REPO_HELP),  # noqa: B008
 ) -> None:
     """Retrieve the top-k chunks for a question (naive, no generation yet)."""
     settings = Settings()
@@ -106,9 +111,9 @@ def query(
 def answer(
     question: str = typer.Argument(..., help="Natural-language question."),
     top_k: int = typer.Option(5, help="Number of chunks to retrieve."),
-    strategy: str = typer.Option("dense", help="dense | hybrid | hybrid+rerank."),
-    store: str = typer.Option("pgvector", help="Backend: pgvector | memory."),
-    repo: Path = typer.Option(Path("."), help="Repo to index (memory backend only)."),  # noqa: B008
+    strategy: str = typer.Option("dense", help=_STRATEGY_HELP),
+    store: str = typer.Option("pgvector", help=_STORE_HELP),
+    repo: Path = typer.Option(Path("."), help=_REPO_HELP),  # noqa: B008
 ) -> None:
     """Retrieve context and generate a grounded, structured answer with citations."""
     settings = Settings()
@@ -133,9 +138,9 @@ def eval(
         Path("evals/golden"), help="Golden dataset directory."
     ),
     top_k: int = typer.Option(5, help="Retrieval cutoff k for recall/NDCG."),
-    store: str = typer.Option("memory", help="Backend: pgvector | memory."),
-    repo: Path = typer.Option(Path("."), help="Repo to index (memory backend only)."),  # noqa: B008
-    strategy: str = typer.Option("dense", help="dense | hybrid | hybrid+rerank."),
+    store: str = typer.Option("memory", help=_STORE_HELP),
+    repo: Path = typer.Option(Path("."), help=_REPO_HELP),  # noqa: B008
+    strategy: str = typer.Option("dense", help=_STRATEGY_HELP),
     update_baseline: bool = typer.Option(False, help="Write a new evals/baseline.json."),
     adr: str = typer.Option(None, help="ADR reference to override a regression."),
     baseline_path: Path = typer.Option(Path("evals/baseline.json")),  # noqa: B008

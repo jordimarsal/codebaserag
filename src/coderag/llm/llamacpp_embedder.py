@@ -52,7 +52,8 @@ class LlamaCppEmbedder:
             with contextlib.suppress(OSError):
                 detail = exc.read().decode("utf-8", "ignore")
             raise EmbedderError(f"llama.cpp embeddings request failed: {exc} {detail}") from exc
-        except (urllib.error.URLError, OSError, ValueError) as exc:
+        # URLError derives from OSError, so listing it here would be redundant.
+        except (OSError, ValueError) as exc:
             raise EmbedderError(f"llama.cpp embeddings request failed: {exc}") from exc
         vectors = [item["embedding"] for item in data["data"]]
         if len(vectors) != len(batch):

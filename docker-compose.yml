@@ -96,8 +96,10 @@ services:
   langfuse-server:
     image: langfuse/langfuse:2
     environment:
-      DATABASE_URL: postgresql://${LANGFUSE_DB_USER:-langfuse}:${LANGFUSE_DB_PASSWORD:-langfuse}@langfuse-db:5432/${LANGFUSE_DB_NAME:-langfuse}
-      CLICKHOUSE_URL: clickhouse://default:${LANGFUSE_CLICKHOUSE_PASSWORD:-langfuse-clickhouse}@clickhouse:8123/default
+      # Credentials come from .env (see .env.example): embedding the password in
+      # these connection strings put a hardcoded Postgres password in the repo.
+      DATABASE_URL: ${LANGFUSE_DATABASE_URL:?copy .env.example to .env}
+      CLICKHOUSE_URL: ${LANGFUSE_CLICKHOUSE_URL:?copy .env.example to .env}
       REDISHOST: langfuse-redis
       REDISPORT: "6379"
       LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-pk-lf-dev}
@@ -119,8 +121,9 @@ services:
     image: langfuse/langfuse:2
     command: ["node", "worker"]
     environment:
-      DATABASE_URL: postgresql://${LANGFUSE_DB_USER:-langfuse}:${LANGFUSE_DB_PASSWORD:-langfuse}@langfuse-db:5432/${LANGFUSE_DB_NAME:-langfuse}
-      CLICKHOUSE_URL: clickhouse://default:${LANGFUSE_CLICKHOUSE_PASSWORD:-langfuse-clickhouse}@clickhouse:8123/default
+      # Same contract as langfuse-server: no credentials inline (see .env.example).
+      DATABASE_URL: ${LANGFUSE_DATABASE_URL:?copy .env.example to .env}
+      CLICKHOUSE_URL: ${LANGFUSE_CLICKHOUSE_URL:?copy .env.example to .env}
       REDISHOST: langfuse-redis
       REDISPORT: "6379"
       SALT: ${LANGFUSE_SALT:-change-me-salt}

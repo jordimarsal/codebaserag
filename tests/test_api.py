@@ -121,7 +121,8 @@ def test_sanitize_error_is_bounded_and_single_line() -> None:
 
     messy = "psycopg connect to 10.1.2.3:5432\nfailed\t" + "x" * 1000
     out = _sanitize_error(messy)
-    assert "\n" not in out and "\t" not in out
+    assert "\n" not in out
+    assert "\t" not in out
     assert len(out) <= _ERROR_TEXT_LIMIT
 
 

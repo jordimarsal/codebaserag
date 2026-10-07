@@ -22,9 +22,7 @@ class VectorStore(Protocol):
         """Persist chunks alongside their dense vectors."""
         ...
 
-    def query(
-        self, vector: list[float], top_k: int, language: object = None
-    ) -> list[RetrievalResult]:
+    def query(self, vector: list[float], top_k: int) -> list[RetrievalResult]:
         """Return the top_k most similar chunks to the query vector."""
         ...
 

@@ -7,7 +7,7 @@ def _cosine(a: list[float], b: list[float]) -> float:
     dot = sum(x * y for x, y in zip(a, b, strict=True))
     na = math.sqrt(sum(x * x for x in a))
     nb = math.sqrt(sum(y * y for y in b))
-    if na == 0.0 or nb == 0.0:
+    if na <= 0.0 or nb <= 0.0:
         return 0.0
     return dot / (na * nb)
 
@@ -25,9 +25,7 @@ class InMemoryVectorStore:
         self._chunks.extend(chunks)
         self._vectors.extend(vectors)
 
-    def query(
-        self, vector: list[float], top_k: int, language: object = None
-    ) -> list[RetrievalResult]:
+    def query(self, vector: list[float], top_k: int) -> list[RetrievalResult]:
         scored = [
             (chunk, _cosine(vector, vec))
             for chunk, vec in zip(self._chunks, self._vectors, strict=True)

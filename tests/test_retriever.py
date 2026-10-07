@@ -1,3 +1,4 @@
+import pytest
 from evals.embedder import HashEmbedder
 
 from coderag.retrieval.reranker import CrossEncoderReranker
@@ -73,8 +74,8 @@ def test_hybrid_fuses_store_and_bm25() -> None:
 
 
 # region hybrid+rerank
-def test_hybrid_rerank_invokes_reranker() -> None:
-    FakeReranker.called_with = []
+def test_hybrid_rerank_invokes_reranker(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(FakeReranker, "called_with", [])
     store = FakeVectorStore([_chunk("a.py"), _chunk("b.py")])
     bm25 = FakeBm25([_chunk("c.py"), _chunk("d.py")])
     retriever = Retriever(
@@ -128,7 +129,8 @@ def test_retriever_clamps_requested_limits() -> None:
         rerank_top_n=10**9,
     )
     retriever.retrieve("q")
-    assert seen and all(k <= MAX_CANDIDATE_K for k in seen), seen
+    assert seen, seen
+    assert all(k <= MAX_CANDIDATE_K for k in seen), seen
     assert retriever._top_k <= MAX_TOP_K
 
 

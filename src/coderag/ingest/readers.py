@@ -16,6 +16,7 @@ EXT_TO_LANGUAGE: dict[str, Language] = {
 }
 
 DEFAULT_EXTENSIONS: frozenset[str] = frozenset(EXT_TO_LANGUAGE)
+GITIGNORE_NAME = ".gitignore"
 
 
 # region language_for
@@ -30,7 +31,7 @@ def load_gitignore(repo_root: Path) -> "pathspec.GitIgnoreSpec | None":
     GitIgnoreSpec (unlike plain PathSpec) also implements git's rule that a
     negation cannot re-include a file inside an already-excluded directory.
     """
-    gitignore = Path(repo_root) / ".gitignore"
+    gitignore = Path(repo_root) / GITIGNORE_NAME
     if not gitignore.is_file():
         return None
     with gitignore.open(encoding="utf-8") as handle:
@@ -67,9 +68,9 @@ def combined_ignore_spec(repo_root: Path) -> "pathspec.GitIgnoreSpec | None":
     """
     root = Path(repo_root).resolve()
     lines: list[str] = []
-    lines.extend(_read_lines(root / ".gitignore"))
+    lines.extend(_read_lines(root / GITIGNORE_NAME))
     lines.extend(_read_lines(root / ".git" / "info" / "exclude"))
-    for nested in sorted(root.rglob(".gitignore")):
+    for nested in sorted(root.rglob(GITIGNORE_NAME)):
         try:
             rel_dir = nested.parent.resolve().relative_to(root)
         except ValueError:

@@ -20,7 +20,8 @@ class FakeLlmClient:
     def generate(self, prompt: str) -> str:
         return json.dumps(self._answers.get(prompt, self._default))
 
-    def generate_structured(self, prompt: str, schema: dict[str, Any]) -> dict[str, Any]:
+    def generate_structured(self, prompt: str, _schema: dict[str, Any]) -> dict[str, Any]:
+        """Canned answers; the schema parameter exists for LLM parity and is ignored."""
         if prompt in self._answers:
             return self._answers[prompt]
         for key, value in self._answers.items():

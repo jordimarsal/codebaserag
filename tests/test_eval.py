@@ -63,8 +63,9 @@ def test_run_retrieval_eval_distractor() -> None:
 
 
 def test_run_retrieval_eval_empty_dataset() -> None:
+    retrieve = _dense_retriever(_seeded_store(["x"], ["a.py"])).retrieve
     with pytest.raises(EvalError):
-        run_retrieval_eval([], _dense_retriever(_seeded_store(["x"], ["a.py"])).retrieve)
+        run_retrieval_eval([], retrieve)
 
 
 def test_load_golden_from_yaml(tmp_path: Path) -> None:
@@ -95,8 +96,9 @@ def test_regression_guard_raises_without_adr(tmp_path: Path) -> None:
     good = EvalReport([], 1.0, 1.0, 1.0, 5)
     save_baseline(baseline_path, good)
     worse = EvalReport([], 0.2, 0.2, 0.2, 5)
+    baseline = load_baseline(baseline_path)
     with pytest.raises(AssertionError):
-        assert_not_regressed(worse, load_baseline(baseline_path))
+        assert_not_regressed(worse, baseline)
 
 
 def test_regression_guard_passes_with_adr(tmp_path: Path) -> None:

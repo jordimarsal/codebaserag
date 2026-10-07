@@ -28,14 +28,10 @@ class Settings(BaseSettings):
         file_secret_settings: PydanticBaseSettingsSource,
     ) -> tuple[PydanticBaseSettingsSource, ...]:
         env_file = os.environ.get("CODERAG_ENV_FILE")
-        if env_file:
-            return (
-                init_settings,
-                env_settings,
-                DotEnvSettingsSource(settings_cls, env_file=env_file),
-                file_secret_settings,
-            )
-        return (init_settings, env_settings, file_secret_settings)
+        dotenv_source = (
+            DotEnvSettingsSource(settings_cls, env_file=env_file) if env_file else dotenv_settings
+        )
+        return (init_settings, env_settings, dotenv_source, file_secret_settings)
 
     database_dsn: str = "postgresql://localhost:5432/codebaserag"
     embedder_url: str = "http://localhost:11434"
