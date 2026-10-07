@@ -109,18 +109,15 @@ def coverage_module_rows(path: Path) -> list[tuple[str, str, str]]:
             if int(line.get("hits", "0")) > 0:
                 lines_hit[group] += 1
             if line.get("branch") == "true":
-                covered, total = line.get("condition-coverage", "(0/0)").strip("() %").split("/")[
-                    :2
-                ] or (0, 0)
+                # condition-coverage="50% (1/2)" → covered=1, total=2
+                counts = line.get("condition-coverage", "(0/0)").split("(")[-1].rstrip(")")
+                covered, total = counts.split("/")
                 cond_total[group] += int(total)
                 cond_hit[group] += int(covered)
     rows = []
     for group in sorted(lines_total):
         pct = 100 * lines_hit[group] / lines_total[group]
-        if cond_total[group]:
-            branch = f"{100 * cond_hit[group] / cond_total[group]:.1f}%"
-        else:
-            branch = "—"
+        branch = f"{100 * cond_hit[group] / cond_total[group]:.1f}%" if cond_total[group] else "—"
         rows.append((group, f"{pct:.1f}%", branch))
     return rows
 
@@ -235,6 +232,7 @@ python3 scripts/sonar-quality.py</pre>
 
 
 def write_badges(out_dir: Path, report: dict) -> list[Path]:
+    out_dir.mkdir(parents=True, exist_ok=True)
     m = report["measures"]
     gate_ok = report["qualityGate"].get("status") == "OK"
     pct = m.get("coverage")

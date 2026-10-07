@@ -1,0 +1,96 @@
+{
+ "generatedAt": "2026-10-07T14:23:59+00:00",
+ "server": "https://sonar.viatgecio.test",
+ "project": {
+  "key": "jordimarsal:codebaserag",
+  "name": "jordimarsal:codebaserag",
+  "dashboard": "https://sonar.viatgecio.test/dashboard?id=jordimarsal%3Acodebaserag"
+ },
+ "qualityGate": {
+  "name": "Viatgecio Way",
+  "error": null,
+  "status": "OK",
+  "ignoredConditions": false,
+  "period": {
+   "mode": "PREVIOUS_VERSION",
+   "date": "2026-10-07T08:12:26+0000"
+  },
+  "caycStatus": "non-compliant",
+  "conditions": [
+   {
+    "metric": "new_duplicated_lines_density",
+    "comparator": "GT",
+    "threshold": "3",
+    "actual": "0.0",
+    "status": "OK"
+   },
+   {
+    "metric": "new_violations",
+    "comparator": "GT",
+    "threshold": "0",
+    "actual": "0",
+    "status": "OK"
+   }
+  ]
+ },
+ "measures": {
+  "complexity": 367,
+  "duplicated_lines_density": 0.0,
+  "duplicated_lines": 0,
+  "functions": 162,
+  "new_vulnerabilities": 0,
+  "classes": 52,
+  "new_coverage": 23.4,
+  "statements": 1396,
+  "sqale_index": 5,
+  "sqale_rating": 1.0,
+  "bugs": 0,
+  "new_violations": 0,
+  "ncloc": 2303,
+  "new_maintainability_rating": 1.0,
+  "coverage": 62.5,
+  "reliability_rating": 1.0,
+  "code_smells": 1,
+  "security_rating": 1.0,
+  "violations": 1,
+  "comment_lines_density": 10.2,
+  "security_hotspots": 0,
+  "new_bugs": 0,
+  "new_code_smells": 0,
+  "new_security_hotspots": 0,
+  "comment_lines": 263,
+  "cognitive_complexity": 310,
+  "files": 45,
+  "vulnerabilities": 0,
+  "new_duplicated_lines_density": 0.0
+ },
+ "measuresError": null,
+ "issues": {
+  "total": 1,
+  "returned": 1,
+  "items": [
+   {
+    "rule": "python:S5778",
+    "severity": "MAJOR",
+    "type": "CODE_SMELL",
+    "file": "tests/test_ingest.py",
+    "line": 133,
+    "message": "Refactor this exception test to have only one invocation possibly throwing an exception.",
+    "effort": "5min",
+    "status": "OPEN",
+    "creationDate": "2026-09-07T18:36:35+0000",
+    "tags": [
+     "tests",
+     "pytest",
+     "unittest"
+    ]
+   }
+  ]
+ },
+ "issuesError": null,
+ "securityHotspots": {
+  "total": 0,
+  "items": []
+ },
+ "securityHotspotsError": null
+}

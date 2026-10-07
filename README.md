@@ -1,6 +1,9 @@
 # codebaserag
 
 [![CI](https://github.com/jordimarsal/codebaserag/actions/workflows/ci.yml/badge.svg)](https://github.com/jordimarsal/codebaserag/actions/workflows/ci.yml)
+[![Quality Gate](docs/images/badge-quality-gate.svg)](https://jordimarsal.github.io/codebaserag/)
+[![Coverage](docs/images/badge-coverage.svg)](https://jordimarsal.github.io/codebaserag/)
+[![Code Smells](docs/images/badge-code-smells.svg)](https://jordimarsal.github.io/codebaserag/)
 
 Hexagonal RAG over your own codebase, with a deterministic, eval-first core.
 
@@ -9,6 +12,19 @@ Hexagonal RAG over your own codebase, with a deterministic, eval-first core.
 Python 3.13 · Pydantic v2 · typer · FastAPI · pgvector (default) / Qdrant · Ollama /
 Anthropic embeddings & LLM · Langfuse observability. Tooling: `ruff`, `black`, `mypy --strict`,
 `pytest`.
+
+## Quality
+
+Analyzed with SonarQube behind a custom quality gate ("Viatgecio Way") — current
+metrics, per-module coverage and the raw `codebaserag-report.json` live on the
+[quality page](https://jordimarsal.github.io/codebaserag/), published on GitHub
+Pages. The badges above are static SVGs rendered from the latest scan report;
+the Sonar server itself is LAN-only, so dynamic badges would not resolve outside
+the homelab. After each scan, refresh the published assets with:
+
+```bash
+python3 scripts/sonar-quality.py   # reads ../codebaserag-report.json, renders page + badges
+```
 
 ## Install (one command)
 
