@@ -25,6 +25,7 @@ import sys
 import xml.etree.ElementTree as ET
 from collections import defaultdict
 from pathlib import Path
+from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_REPORT = REPO_ROOT.parent / "codebaserag-report.json"
@@ -122,7 +123,7 @@ def coverage_module_rows(path: Path) -> list[tuple[str, str, str]]:
     return rows
 
 
-def render_page(report: dict, rows: list[tuple[str, str, str]]) -> str:
+def render_page(report: dict[str, Any], rows: list[tuple[str, str, str]]) -> str:
     m = report["measures"]
     gate = report["qualityGate"]
     pct = m.get("coverage")
@@ -231,7 +232,7 @@ python3 scripts/sonar-quality.py</pre>
 """
 
 
-def write_badges(out_dir: Path, report: dict) -> list[Path]:
+def write_badges(out_dir: Path, report: dict[str, Any]) -> list[Path]:
     out_dir.mkdir(parents=True, exist_ok=True)
     m = report["measures"]
     gate_ok = report["qualityGate"].get("status") == "OK"
