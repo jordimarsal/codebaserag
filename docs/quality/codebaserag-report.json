@@ -1,5 +1,5 @@
 {
- "generatedAt": "2026-10-07T14:23:59+00:00",
+ "generatedAt": "2026-10-07T14:35:27+00:00",
  "server": "https://sonar.viatgecio.test",
  "project": {
   "key": "jordimarsal:codebaserag",
@@ -40,52 +40,35 @@
   "functions": 162,
   "new_vulnerabilities": 0,
   "classes": 52,
-  "new_coverage": 23.4,
-  "statements": 1396,
-  "sqale_index": 5,
+  "new_coverage": 23.2,
+  "statements": 1397,
+  "sqale_index": 0,
   "sqale_rating": 1.0,
   "bugs": 0,
   "new_violations": 0,
-  "ncloc": 2303,
+  "ncloc": 2403,
   "new_maintainability_rating": 1.0,
-  "coverage": 62.5,
+  "coverage": 62.4,
   "reliability_rating": 1.0,
-  "code_smells": 1,
+  "code_smells": 0,
   "security_rating": 1.0,
-  "violations": 1,
-  "comment_lines_density": 10.2,
+  "violations": 0,
+  "comment_lines_density": 9.9,
   "security_hotspots": 0,
   "new_bugs": 0,
   "new_code_smells": 0,
   "new_security_hotspots": 0,
-  "comment_lines": 263,
-  "cognitive_complexity": 310,
-  "files": 45,
+  "comment_lines": 264,
+  "cognitive_complexity": 308,
+  "files": 46,
   "vulnerabilities": 0,
   "new_duplicated_lines_density": 0.0
  },
  "measuresError": null,
  "issues": {
-  "total": 1,
-  "returned": 1,
-  "items": [
-   {
-    "rule": "python:S5778",
-    "severity": "MAJOR",
-    "type": "CODE_SMELL",
-    "file": "tests/test_ingest.py",
-    "line": 133,
-    "message": "Refactor this exception test to have only one invocation possibly throwing an exception.",
-    "effort": "5min",
-    "status": "OPEN",
-    "creationDate": "2026-09-07T18:36:35+0000",
-    "tags": [
-     "tests",
-     "pytest",
-     "unittest"
-    ]
-   }
-  ]
+  "total": 0,
+  "returned": 0,
+  "items": []
  },
  "issuesError": null,
  "securityHotspots": {
