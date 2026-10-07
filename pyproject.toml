@@ -89,7 +89,11 @@ markers = [
 ]
 
 [tool.coverage.run]
-source = ["src/coderag", "evals"]
+# source="." keeps report filenames relative to the repo root, which is what
+# SonarQube's coverage importer expects; everything else is omitted.
+source = ["."]
+omit = [".venv/*", "tests/*", "harness/*", "scripts/*", "docs/*"]
+relative_files = true
 branch = true
 
 [tool.coverage.report]

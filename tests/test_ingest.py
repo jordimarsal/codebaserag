@@ -119,19 +119,22 @@ def test_pipeline_skips_binary_file(tmp_path: Path):
     assert indexed == 1
 
 
-def test_pipeline_raises_on_embedding_error(tmp_path: Path):
+class BrokenEmbedder:
+    def embed(self, texts: list[str]) -> list[list[float]]:
+        raise RuntimeError("boom")
+
+    def dim(self) -> int:
+        return 3
+
+
+def _ingest_with_broken_embedder(tmp_path: Path) -> None:
     (tmp_path / "a.py").write_text("x = 1")
+    run_ingest(tmp_path, BrokenEmbedder(), FakeStore())
 
-    class BrokenEmbedder:
-        def embed(self, texts: list[str]) -> list[list[float]]:
-            raise RuntimeError("boom")
 
-        def dim(self) -> int:
-            return 3
-
-    store = FakeStore()
+def test_pipeline_raises_on_embedding_error(tmp_path: Path):
     with pytest.raises(IngestError):
-        run_ingest(tmp_path, BrokenEmbedder(), store)
+        _ingest_with_broken_embedder(tmp_path)
 
 
 # region R10 port conformance
