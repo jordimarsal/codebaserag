@@ -2,8 +2,9 @@
 
 Same `VectorStore` port, same cosine semantics as the in-memory store: the
 corpus, the vectors and the embedder stay the project's own — llama-index is
-only the query layer (C1: LangChain-ecosystem retrieval, gated by the same
-recall@5 floor in the eval).
+only the query layer (C1: LangChain-ecosystem retrieval). Parity with the
+in-memory backend is checked by `evals/experiments/llamaindex_vs_dense.py`;
+retrieval quality stays gated by the project's own eval baseline.
 """
 
 import math

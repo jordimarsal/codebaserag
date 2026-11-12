@@ -23,8 +23,7 @@ class PgvectorStore:
         with self._connect() as conn:
             conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
             register_vector(conn)
-            conn.execute(
-                f"""
+            conn.execute(f"""
                 CREATE TABLE IF NOT EXISTS chunks (
                     id BIGSERIAL PRIMARY KEY,
                     path TEXT NOT NULL,
@@ -35,8 +34,7 @@ class PgvectorStore:
                     hash TEXT NOT NULL,
                     embedding vector({self._dim})
                 )
-                """
-            )
+                """)
 
     def upsert(self, chunks: list[Chunk], vectors: list[list[float]]) -> None:
         if len(chunks) != len(vectors):

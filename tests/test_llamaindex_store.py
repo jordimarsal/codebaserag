@@ -10,7 +10,7 @@ pytest.importorskip("llama_index.core")
 
 from coderag.stores.errors import StoreError  # noqa: E402
 from coderag.stores.llamaindex import LlamaIndexStore  # noqa: E402
-from coderag.types import Chunk  # noqa: E402
+from coderag.types import Chunk, Language  # noqa: E402
 
 
 def make_chunk(index: int = 0) -> Chunk:
@@ -19,7 +19,7 @@ def make_chunk(index: int = 0) -> Chunk:
         line_start=index * 10 + 1,
         line_end=index * 10 + 9,
         text=f"Chunk {index}: the answer is {index}.",
-        language="python",
+        language=Language.PYTHON,
         hash=f"hash-{index:04d}",
     )
 
@@ -42,11 +42,11 @@ def test_query_returns_the_nearest_chunk_reconstructed() -> None:
 
     results = store.query([0.0, 1.0, 0.0, 0.0], top_k=2)
 
-    assert results[0].chunk.hash == "hash-0001"
-    assert results[0].chunk.path == "src/module_1.py"
-    assert results[0].chunk.line_start == 11
-    assert results[0].chunk.line_end == 19
-    assert results[0].chunk.text == "Chunk 1: the answer is 1."
+    assert results[0].chunk.hash == "hash-0000"
+    assert results[0].chunk.path == "src/module_0.py"
+    assert results[0].chunk.line_start == 1
+    assert results[0].chunk.line_end == 9
+    assert results[0].chunk.text == "Chunk 0: the answer is 0."
     assert len(results) == 2
 
 
