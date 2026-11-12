@@ -7,6 +7,21 @@
 
 Hexagonal RAG over your own codebase, with a deterministic, eval-first core.
 
+## What is it?
+
+Asking an AI about your own code today means either pasting it out of your
+machine or getting a confident hallucination. codebaserag answers questions
+about your repository in plain language **with citations**: the exact file and
+lines each claim comes from.
+
+Picture a librarian who has read your whole codebase: you ask a question, they
+fetch the relevant passage in seconds, and they always show you the page.
+
+New to RAG? Read the [plain-language overview](docs/overview.md) first — it
+explains every piece (ingestion, embeddings, retrieval, evaluation, choosing a
+store) without assuming prior knowledge. Interactive views are under
+[Diagrams](#diagrams).
+
 ## Stack
 
 Python 3.13 · Pydantic v2 · typer · FastAPI · pgvector (default) / Qdrant · Ollama /
