@@ -14,3 +14,8 @@ wheels/
 
 # agent workflow local state
 harness/
+
+# Test/coverage artifacts
+.coverage
+coverage.xml
+htmlcov/
