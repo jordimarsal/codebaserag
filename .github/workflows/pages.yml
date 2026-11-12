@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'docs/quality/**'
+      - 'docs/diagrams/**'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
@@ -32,6 +33,13 @@ jobs:
       - uses: actions/configure-pages@v6
         with:
           enablement: true
+
+      # The interactive diagrams live in docs/diagrams; copy them into the
+      # artifact root so they publish next to the quality page.
+      - name: Include diagrams
+        run: |
+          mkdir -p docs/quality/diagrams
+          cp docs/diagrams/*.html docs/quality/diagrams/
 
       - uses: actions/upload-pages-artifact@v5
         with:

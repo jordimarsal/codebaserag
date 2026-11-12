@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "codebaserag — query path (hybrid)",
+    "output": "docs/diagrams/query-sequence.html",
+    "quality_profile": "showcase",
+    "viewBox": [1084, 664],
+    "repository": {
+      "url": "https://github.com/jordimarsal/codebaserag",
+      "provider": "github",
+      "link_mode": "web",
+      "revision": "550b04857bb48535e0739087e670bcce861e4d11"
+    }
+  },
+  "participants": [
+    { "id": "dev", "type": "external", "label": "Developer", "sublabel": "terminal" },
+    { "id": "cli", "type": "backend", "label": "CLI", "sublabel": "coderag query", "sources": [{ "path": "src/coderag/cli.py", "line": 83, "end_line": 110 }] },
+    { "id": "retriever", "type": "backend", "label": "Retriever", "sublabel": "dense / hybrid", "sources": [{ "path": "src/coderag/retrieval/retriever.py", "line": 28, "end_line": 93 }] },
+    { "id": "embedder", "type": "cloud", "label": "Embedder", "sublabel": "Ollama / llama.cpp", "sources": [{ "path": "src/coderag/llm/ollama_embedder.py", "line": 8, "end_line": 22 }] },
+    { "id": "dense", "type": "database", "label": "Dense store", "sublabel": "VectorStore port", "sources": [{ "path": "src/coderag/stores/ports.py", "line": 20, "end_line": 30 }, { "path": "src/coderag/stores/memory.py", "line": 16, "end_line": 37 }] },
+    { "id": "bm25", "type": "database", "label": "BM25 index", "sublabel": "lexical", "sources": [{ "path": "src/coderag/retrieval/bm25.py", "line": 27, "end_line": 72 }] },
+    { "id": "fusion", "type": "backend", "label": "RRF fusion", "sublabel": "reciprocal rank", "sources": [{ "path": "src/coderag/retrieval/fusion.py", "line": 20, "end_line": 36 }] },
+    { "id": "tracer", "type": "external", "label": "Tracer", "sublabel": "Langfuse / no-op", "sources": [{ "path": "src/coderag/observability/__init__.py", "line": 6, "end_line": 11 }] }
+  ],
+  "segments": [
+    { "from": 150, "to": 300, "label": "embed the question" },
+    { "from": 310, "to": 560, "label": "retrieve and fuse" }
+  ],
+  "messages": [
+    { "id": "m1", "from": "dev", "to": "cli", "y": 160, "label": "question", "variant": "emphasis" },
+    { "id": "m2", "from": "cli", "to": "retriever", "y": 186, "label": "retrieve(question)" },
+    { "id": "m3", "from": "retriever", "to": "embedder", "y": 212, "label": "embed(question)" },
+    { "id": "m4", "from": "embedder", "to": "retriever", "y": 240, "label": "query vector", "variant": "return" },
+    { "id": "m5", "from": "retriever", "to": "dense", "y": 268, "label": "query(vector, candidate_k)" },
+    { "id": "m6", "from": "dense", "to": "retriever", "y": 296, "label": "dense top-k", "variant": "return" },
+    { "id": "m7", "from": "retriever", "to": "bm25", "y": 324, "label": "search(question, candidate_k)" },
+    { "id": "m8", "from": "bm25", "to": "retriever", "y": 352, "label": "lexical top-k", "variant": "return" },
+    { "id": "m9", "from": "retriever", "to": "fusion", "y": 380, "label": "fuse dense + lexical", "note": "RRF, k=60" },
+    { "id": "m10", "from": "fusion", "to": "retriever", "y": 430, "label": "fused ranking", "variant": "return" },
+    { "id": "m11", "from": "retriever", "to": "tracer", "y": 458, "label": "span retrieval", "variant": "dashed" },
+    { "id": "m12", "from": "retriever", "to": "cli", "y": 486, "label": "RetrievalResult[]", "variant": "return" },
+    { "id": "m13", "from": "cli", "to": "dev", "y": 514, "label": "ranked paths + scores", "variant": "return" }
+  ],
+  "activations": [
+    { "participant": "dev", "from": 160, "to": 518, "type": "external" },
+    { "participant": "cli", "from": 160, "to": 518, "type": "backend" },
+    { "participant": "retriever", "from": 186, "to": 490, "type": "backend" },
+    { "participant": "embedder", "from": 212, "to": 246, "type": "cloud" },
+    { "participant": "dense", "from": 268, "to": 302, "type": "database" },
+    { "participant": "bm25", "from": 324, "to": 358, "type": "database" },
+    { "participant": "fusion", "from": 380, "to": 436, "type": "backend" },
+    { "participant": "tracer", "from": 458, "to": 464, "type": "external" }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Before the first query",
+      "items": [
+        "The memory backend builds chunks + vectors during build_retriever",
+        "pgvector and Qdrant are indexed once by coderag ingest and persist"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Hybrid is optional",
+      "items": [
+        "dense returns store.query directly and skips BM25 + RRF",
+        "hybrid fuses the two rankings with reciprocal rank fusion",
+        "hybrid+rerank adds a cross-encoder pass on the fused candidates"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Bounds",
+      "items": [
+        "candidate_k = max(top_k, rerank_top_n), capped at 200",
+        "top_k is capped at 100; the FastAPI schema bounds it further"
+      ]
+    }
+  ]
+}

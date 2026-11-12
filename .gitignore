@@ -19,3 +19,12 @@ harness/
 .coverage
 coverage.xml
 htmlcov/
+
+# Archify working folders (generated diagrams keep their sources in docs/diagrams)
+.archify/
+
+# Archify delivery receipts (the HTML and editable source are committed)
+docs/diagrams/*.finalize.json
+docs/diagrams/*.finalize-summary.json
+docs/diagrams/*.browser-check.json
+docs/diagrams/*.delivery.json

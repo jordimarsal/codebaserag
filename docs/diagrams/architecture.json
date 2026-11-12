@@ -1,0 +1,436 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "codebaserag \u2014 ingestion, retrieval and evaluation",
+    "output": "docs/diagrams/architecture.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/jordimarsal/codebaserag",
+      "provider": "github",
+      "link_mode": "web",
+      "revision": "550b04857bb48535e0739087e670bcce861e4d11"
+    }
+  },
+  "components": [
+    {
+      "id": "caller",
+      "type": "external",
+      "label": "Developer / client",
+      "sublabel": "CLI or HTTP",
+      "pos": [
+        40,
+        340
+      ],
+      "size": [
+        120,
+        60
+      ]
+    },
+    {
+      "id": "entrypoints",
+      "type": "backend",
+      "label": "CLI + FastAPI",
+      "sublabel": "ingest \u00b7 query \u00b7 answer \u00b7 eval",
+      "pos": [
+        210,
+        320
+      ],
+      "size": [
+        150,
+        70
+      ],
+      "sources": [
+        {
+          "path": "src/coderag/cli.py",
+          "line": 47,
+          "end_line": 110
+        },
+        {
+          "path": "src/coderag/api/app.py",
+          "line": 46,
+          "end_line": 70
+        }
+      ]
+    },
+    {
+      "id": "compose",
+      "type": "backend",
+      "label": "Composition root",
+      "sublabel": "build_retriever \u00b7 build_serving_components",
+      "pos": [
+        400,
+        320
+      ],
+      "size": [
+        180,
+        70
+      ],
+      "sources": [
+        {
+          "path": "src/coderag/compose.py",
+          "line": 62,
+          "end_line": 112
+        }
+      ]
+    },
+    {
+      "id": "ingest",
+      "type": "backend",
+      "label": "Ingest pipeline",
+      "sublabel": "discover \u2192 chunk \u2192 embed \u2192 upsert",
+      "pos": [
+        620,
+        140
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "src/coderag/ingest/pipeline.py",
+          "line": 33,
+          "end_line": 118
+        }
+      ]
+    },
+    {
+      "id": "retriever",
+      "type": "backend",
+      "label": "Retriever",
+      "sublabel": "dense \u00b7 hybrid \u00b7 hybrid+rerank",
+      "pos": [
+        620,
+        320
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "src/coderag/retrieval/retriever.py",
+          "line": 28,
+          "end_line": 93
+        }
+      ]
+    },
+    {
+      "id": "dense",
+      "type": "database",
+      "label": "Dense store (VectorStore port)",
+      "sublabel": "memory \u00b7 pgvector \u00b7 Qdrant \u00b7 LlamaIndex",
+      "pos": [
+        860,
+        220
+      ],
+      "size": [
+        190,
+        74
+      ],
+      "sources": [
+        {
+          "path": "src/coderag/stores/ports.py",
+          "line": 20,
+          "end_line": 30
+        },
+        {
+          "path": "src/coderag/stores/llamaindex.py",
+          "line": 21,
+          "end_line": 59
+        },
+        {
+          "path": "src/coderag/stores/pgvector.py",
+          "line": 10,
+          "end_line": 56
+        }
+      ]
+    },
+    {
+      "id": "bm25",
+      "type": "database",
+      "label": "BM25 index",
+      "sublabel": "memory \u00b7 Postgres FTS \u00b7 Tantivy",
+      "pos": [
+        860,
+        380
+      ],
+      "size": [
+        190,
+        70
+      ],
+      "sources": [
+        {
+          "path": "src/coderag/retrieval/bm25.py",
+          "line": 27,
+          "end_line": 72
+        }
+      ]
+    },
+    {
+      "id": "fusion",
+      "type": "backend",
+      "label": "RRF fusion + rerank",
+      "sublabel": "RRF; optional rerank",
+      "pos": [
+        1080,
+        300
+      ],
+      "size": [
+        160,
+        70
+      ],
+      "sources": [
+        {
+          "path": "src/coderag/retrieval/fusion.py",
+          "line": 20,
+          "end_line": 36
+        },
+        {
+          "path": "src/coderag/retrieval/reranker.py",
+          "line": 24,
+          "end_line": 40
+        }
+      ]
+    },
+    {
+      "id": "embedder",
+      "type": "cloud",
+      "label": "Embedder service",
+      "sublabel": "Ollama / llama.cpp",
+      "pos": [
+        860,
+        60
+      ],
+      "size": [
+        170,
+        64
+      ],
+      "sources": [
+        {
+          "path": "src/coderag/llm/ollama_embedder.py",
+          "line": 8,
+          "end_line": 22
+        },
+        {
+          "path": "src/coderag/llm/llamacpp_embedder.py",
+          "line": 10,
+          "end_line": 30
+        }
+      ]
+    },
+    {
+      "id": "generator",
+      "type": "backend",
+      "label": "Generator",
+      "sublabel": "structured answer + citations",
+      "pos": [
+        860,
+        520
+      ],
+      "size": [
+        170,
+        70
+      ],
+      "sources": [
+        {
+          "path": "src/coderag/generation/generator.py",
+          "line": 42,
+          "end_line": 100
+        }
+      ]
+    },
+    {
+      "id": "llm",
+      "type": "cloud",
+      "label": "LLM service",
+      "sublabel": "LiteLLM / fake",
+      "pos": [
+        1080,
+        540
+      ],
+      "size": [
+        160,
+        64
+      ],
+      "sources": [
+        {
+          "path": "src/coderag/llm/litellm_client.py",
+          "line": 9,
+          "end_line": 40
+        }
+      ]
+    },
+    {
+      "id": "eval",
+      "type": "backend",
+      "label": "Eval harness",
+      "sublabel": "recall@k \u00b7 MRR \u00b7 nDCG \u00b7 baseline gate",
+      "pos": [
+        620,
+        660
+      ],
+      "size": [
+        180,
+        70
+      ],
+      "sources": [
+        {
+          "path": "evals/harness.py",
+          "line": 44,
+          "end_line": 78
+        },
+        {
+          "path": "evals/metrics.py",
+          "line": 5,
+          "end_line": 33
+        }
+      ]
+    },
+    {
+      "id": "golden",
+      "type": "database",
+      "label": "Golden set + baseline",
+      "sublabel": "evals/golden \u00b7 baseline.json",
+      "pos": [
+        860,
+        680
+      ],
+      "size": [
+        180,
+        60
+      ],
+      "sources": [
+        {
+          "path": "evals/dataset.py",
+          "line": 14,
+          "end_line": 30
+        },
+        {
+          "path": "evals/baseline.json",
+          "line": 1,
+          "end_line": 5
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "caller-entry",
+      "from": "caller",
+      "to": "entrypoints",
+      "label": "command / HTTP",
+      "variant": "emphasis"
+    },
+    {
+      "id": "entry-build",
+      "from": "entrypoints",
+      "to": "compose",
+      "label": "build"
+    },
+    {
+      "id": "compose-ingest",
+      "from": "compose",
+      "to": "ingest",
+      "label": "ingest"
+    },
+    {
+      "id": "compose-retriever",
+      "from": "compose",
+      "to": "retriever",
+      "label": "query / answer"
+    },
+    {
+      "id": "ingest-embed",
+      "from": "ingest",
+      "to": "embedder",
+      "label": "embed chunks"
+    },
+    {
+      "id": "ingest-dense",
+      "from": "ingest",
+      "to": "dense",
+      "label": "upsert"
+    },
+    {
+      "id": "retriever-embed",
+      "from": "retriever",
+      "to": "embedder",
+      "label": "embed query"
+    },
+    {
+      "id": "retriever-dense",
+      "from": "retriever",
+      "to": "dense",
+      "label": "top-k vectors"
+    },
+    {
+      "id": "retriever-bm25",
+      "from": "retriever",
+      "to": "bm25",
+      "label": "top-k terms"
+    },
+    {
+      "id": "retriever-fusion",
+      "from": "retriever",
+      "to": "fusion",
+      "label": "dense + lexical"
+    },
+    {
+      "id": "retriever-generator",
+      "from": "retriever",
+      "to": "generator",
+      "label": "retrieved context"
+    },
+    {
+      "id": "generator-llm",
+      "from": "generator",
+      "to": "llm",
+      "label": "structured prompt"
+    },
+    {
+      "id": "eval-retriever",
+      "from": "eval",
+      "to": "retriever",
+      "label": "runs queries"
+    },
+    {
+      "id": "eval-golden",
+      "from": "eval",
+      "to": "golden",
+      "label": "loads Q/A + baseline"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Backends",
+      "items": [
+        "memory + HashEmbedder: offline, rebuilds the index per process",
+        "pgvector: default persistent store, with Postgres FTS for BM25",
+        "Qdrant adapter and Tantivy BM25 for the persistent variants",
+        "LlamaIndex SimpleVectorStore behind the same VectorStore port",
+        "Tracer: no-op by default, Langfuse when keys are present"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Ingest bounds",
+      "items": [
+        "Fixed 40-line chunks from .py, .md, .toml and .yaml readers",
+        "Caps: 1 MB per file, 10k files, 64 MB total",
+        "Embeddings are batched (64) and upserted only after all vectors return"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Eval gate",
+      "items": [
+        "44 golden Q/A over this repo: recall@5, MRR and nDCG@5",
+        "baseline.json records mean recall@5 0.409 with a real embedder",
+        "CI runs Ruff, Black, strict Mypy and pytest; eval is on demand"
+      ]
+    }
+  ]
+}
