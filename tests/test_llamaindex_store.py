@@ -1,0 +1,73 @@
+"""LlamaIndex store adapter: port parity with the in-memory semantics.
+
+Requires the optional `llamaindex` extra (`uv sync --extra llamaindex`);
+skipped automatically when it is not installed.
+"""
+
+import pytest
+
+pytest.importorskip("llama_index.core")
+
+from coderag.stores.llamaindex import LlamaIndexStore  # noqa: E402
+from coderag.stores.errors import StoreError  # noqa: E402
+from coderag.types import Chunk  # noqa: E402
+
+
+def make_chunk(index: int = 0) -> Chunk:
+    return Chunk(
+        path=f"src/module_{index}.py",
+        line_start=index * 10 + 1,
+        line_end=index * 10 + 9,
+        text=f"Chunk {index}: the answer is {index}.",
+        language="python",
+        hash=f"hash-{index:04d}",
+    )
+
+
+def store_with(count: int = 3) -> LlamaIndexStore:
+    store = LlamaIndexStore(dim=4)
+    chunks = [make_chunk(i) for i in range(count)]
+    vectors = [[float(i), 1.0, 0.0, 0.0] for i in range(count)]
+    store.upsert(chunks, vectors)
+    return store
+
+
+def test_upsert_counts_indexed_chunks() -> None:
+    store = store_with(3)
+    assert store.count() == 3
+
+
+def test_query_returns_the_nearest_chunk_reconstructed() -> None:
+    store = store_with(3)
+
+    results = store.query([0.0, 1.0, 0.0, 0.0], top_k=2)
+
+    assert results[0].chunk.hash == "hash-0001"
+    assert results[0].chunk.path == "src/module_1.py"
+    assert results[0].chunk.line_start == 11
+    assert results[0].chunk.line_end == 19
+    assert results[0].chunk.text == "Chunk 1: the answer is 1."
+    assert len(results) == 2
+
+
+def test_query_returns_results_sorted_by_similarity() -> None:
+    store = store_with(3)
+
+    results = store.query([1.0, 1.0, 0.0, 0.0], top_k=3)
+
+    scores = [result.score for result in results]
+    assert scores == sorted(scores, reverse=True)
+
+
+def test_empty_index_returns_no_results() -> None:
+    store = LlamaIndexStore(dim=4)
+
+    assert store.query([1.0, 0.0, 0.0, 0.0], top_k=3) == []
+
+
+def test_upsert_rejects_length_mismatch() -> None:
+    store = LlamaIndexStore(dim=4)
+    chunks = [make_chunk(0)]
+
+    with pytest.raises(StoreError):
+        store.upsert(chunks, [[1.0, 0.0], [0.0, 1.0]])

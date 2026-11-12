@@ -34,6 +34,16 @@ def _build_pgvector_store(settings: Settings, dim: int) -> "VectorStore":
     return PgvectorStore(dsn=settings.database_dsn, dim=dim)
 
 
+def _build_llamaindex_store(settings: Settings, dim: int) -> "VectorStore":
+    try:
+        from coderag.stores.llamaindex import LlamaIndexStore  # lazy: optional dependency
+    except ImportError as exc:
+        raise StoreError(
+            f"llamaindex backend needs the 'llamaindex' extra: pip install 'codebaserag[llamaindex]' ({exc})"
+        ) from exc
+    return LlamaIndexStore(dim=dim)
+
+
 def _build_qdrant_store(settings: Settings, dim: int) -> "VectorStore":
     try:
         return QdrantVectorStore(
@@ -64,6 +74,13 @@ def build_retriever(
         embedder: Embedder = HashEmbedder()
         chunks = collect_chunks(repo, chunk_size=settings.chunk_size)
         store: VectorStore = InMemoryVectorStore(dim=embedder.dim())
+        store.upsert(chunks, embedder.embed([chunk.text for chunk in chunks]))
+        bm25 = InMemoryBm25()
+        bm25.index(chunks)
+    elif backend == "llamaindex":
+        embedder = HashEmbedder()
+        chunks = collect_chunks(repo, chunk_size=settings.chunk_size)
+        store = _build_llamaindex_store(settings, embedder.dim())
         store.upsert(chunks, embedder.embed([chunk.text for chunk in chunks]))
         bm25 = InMemoryBm25()
         bm25.index(chunks)

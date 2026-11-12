@@ -75,7 +75,7 @@ def ingest(
 
 
 _STRATEGY_HELP = "dense | hybrid | hybrid+rerank."
-_STORE_HELP = "Backend: pgvector | memory."
+_STORE_HELP = "Backend: pgvector | memory | llamaindex."
 _REPO_HELP = "Repo to index (memory backend only)."
 
 
