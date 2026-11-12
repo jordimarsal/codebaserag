@@ -59,8 +59,8 @@ class InMemoryBm25:
                 if term in self._df:
                     score += bm25_term_score(
                         tf_by_term.get(term, 0),
-                        len(self._chunks),
                         self._df[term],
+                        len(self._chunks),
                         dl,
                         self._avgdl,
                     )
