@@ -8,8 +8,8 @@ import pytest
 
 pytest.importorskip("llama_index.core")
 
-from coderag.stores.llamaindex import LlamaIndexStore  # noqa: E402
 from coderag.stores.errors import StoreError  # noqa: E402
+from coderag.stores.llamaindex import LlamaIndexStore  # noqa: E402
 from coderag.types import Chunk  # noqa: E402
 
 
