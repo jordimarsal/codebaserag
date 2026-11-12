@@ -43,8 +43,9 @@ with the `pgvector,embeddings,llm,qdrant` extras. Override with `CODERAG_EXTRAS=
 same command re-installs that ref; to update, bump `CODERAG_REF` to the newer tag.
 
 ```bash
-coderag query "how does chunking work" --store memory --repo .   # offline, no services
-coderag ingest <repo>                                            # needs pgvector/qdrant + an embedder
+coderag query "how does chunking work" --store memory --repo .      # offline, no services
+coderag query "how does chunking work" --store llamaindex --repo .  # LlamaIndex SimpleVectorStore (extra)
+coderag ingest <repo>                                                # needs pgvector/qdrant + an embedder
 ```
 
 Manual equivalent: `uv tool install --from "codebaserag[pgvector,embeddings,llm,qdrant] @ git+https://github.com/jordimarsal/codebaserag@v0.1.1" coderag`

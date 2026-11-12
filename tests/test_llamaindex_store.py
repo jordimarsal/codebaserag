@@ -59,6 +59,46 @@ def test_query_returns_results_sorted_by_similarity() -> None:
     assert scores == sorted(scores, reverse=True)
 
 
+def test_zero_vector_chunk_scores_zero_without_poisoning_top_k() -> None:
+    store = LlamaIndexStore(dim=4)
+    chunks = [make_chunk(0), make_chunk(1)]
+    store.upsert(chunks, [[0.0, 0.0, 0.0, 0.0], [1.0, 0.0, 0.0, 0.0]])
+
+    results = store.query([1.0, 0.0, 0.0, 0.0], top_k=2)
+
+    assert [result.chunk.hash for result in results] == ["hash-0001", "hash-0000"]
+    assert [result.score for result in results] == [1.0, 0.0]
+
+
+def test_zero_query_scores_everything_zero_in_insertion_order() -> None:
+    store = store_with(3)
+
+    results = store.query([0.0, 0.0, 0.0, 0.0], top_k=2)
+
+    assert [result.chunk.hash for result in results] == ["hash-0000", "hash-0001"]
+    assert [result.score for result in results] == [0.0, 0.0]
+
+
+def test_duplicate_content_at_different_locations_is_kept() -> None:
+    store = LlamaIndexStore(dim=4)
+    first = make_chunk(0)
+    second = Chunk(
+        path="src/other.py",
+        line_start=first.line_start,
+        line_end=first.line_end,
+        text=first.text,
+        language=first.language,
+        hash=first.hash,
+    )
+    store.upsert([first, second], [[1.0, 0.0, 0.0, 0.0], [1.0, 0.0, 0.0, 0.0]])
+
+    results = store.query([1.0, 0.0, 0.0, 0.0], top_k=2)
+
+    assert store.count() == 2
+    assert {result.chunk.path for result in results} == {"src/module_0.py", "src/other.py"}
+    assert {result.chunk.hash for result in results} == {first.hash}
+
+
 def test_empty_index_returns_no_results() -> None:
     store = LlamaIndexStore(dim=4)
 
